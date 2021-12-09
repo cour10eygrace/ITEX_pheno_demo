@@ -19,6 +19,8 @@
 
 # RStudio files
 .Rproj.user/
+*.Rproj
+.Rproj
 
 # produced vignettes
 vignettes/*.html
@@ -37,3 +39,6 @@ vignettes/*.pdf
 
 # R Environment Variables
 .Renviron
+
+#raw data until paper published 
+/data/
