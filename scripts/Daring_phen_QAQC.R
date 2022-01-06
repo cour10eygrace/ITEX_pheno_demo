@@ -274,8 +274,8 @@ phen<-phen%<>%mutate(doy=as.numeric(doy),
                      prior_visit=as.numeric(prior_visit))
 
 #remove rows with neither doy nor prior visit 
-phen_nas<-subset(phen, is.na(prior_visit)&is.na(doy))
-phen<-anti_join(phen, phen_nas)
+#phen_nas<-subset(phen, is.na(prior_visit)&is.na(doy))
+#phen<-anti_join(phen, phen_nas)
 
 # -- ASSIGN PRIOR VISITS ----
 #pull out all observation dates for each year x spp
@@ -296,26 +296,46 @@ phen<-left_join(phen, phenxx)%>%
   mutate(prior_visit=if_else(is.na(prior_visit), Obs.date, prior_visit))%>%
   select(-Obs.date)
 #check all phenology where pv not assigned
-pvmiss<-subset(phen, is.na(prior_visit)& phen_stage!="obs snow free")%>%
-  select( species, year, phen_stage)%>%distinct(.)
+#pvmiss<-subset(phen, is.na(prior_visit)& phen_stage!="obs snow free")%>%
+#  select( species, year, phen_stage)%>%distinct(.)
 #either the case that snow free was not observed in that year/spp 
 #or that snow free entered as coarse date range which is same as first phenophases so diff=0
 #either way not informative for prior visits of early season phenology so remove these observations 
 
-phen
-#Finally filter for phenology only (remove snow free) WITH prior visits
-#remove observations with no demography (traits) and without 
-phen_dem<-filter(phen, phen_stage!="obs snow free")%>% 
-  filter(!is.na(prior_visit))%>%
-  filter(!is.na(value))
+# filter for phenology only (remove snow free) 
+phen_dem<-filter(phen, phen_stage!="obs snow free")
 
+#look at prior visits 
+#find earliest/latest observed dates across all years for each spp x phenophase
+pv_mins<-group_by(phen_dem, species, phen_stage)%>%summarise(pv_min=min(prior_visit, na.rm = T), 
+                                                              doy_max=max(doy, na.rm = T))
+#merge full dataset with averages to infill 
+phen_dem<-mutate(phen_dem, diff=doy-prior_visit)%>%
+  left_join(., pv_mins)
 
-#remove anything where the prior visit window is >14 days 
-#and then take average bw prior visit and doy as censored phen observation
-phen_dem<-mutate(phen_dem, diff=doy-prior_visit)%>%filter(diff<15)%>%
-  select(-diff)%>%
-  mutate(DOY=(prior_visit+doy)/2)
-plot(phen_dem$DOY~phen_dem$doy)
+#first remove anything where NEITHER prior visit nor DOY has info- don't want to infill both values 
+nophen<-subset(phen_dem, is.na(doy)&is.na(prior_visit))
+phen_dem<-anti_join(phen_dem, nophen)
+
+#next step
+# anything where the prior visit is not assigned or the window is >21 days (i.e. not-informative)
+#replace with min prior visit for that spp x phenophase from across all years
+#do the same for doy 
+
+phen_dem<-mutate(phen_dem, prior_visit=if_else(is.na(prior_visit), pv_min, prior_visit))%>%
+mutate(doy=if_else(is.na(doy), doy_max, doy))
+
+#check that all prior visits are earlier than doys & vice-versa
+check<-phen_dem%>% mutate(check=doy-pv_min, check2=doy_max-prior_visit)
+
+#then take average bw prior visit and doy as 'censored' phen observation
+phen_dem$DOY<-round((phen_dem$doy+phen_dem$prior_visit)/2)
+plot(phen_dem$DOY~phen_dem$doy)#visualize - error gets worse for later phenophases 
+
+#put back in rows with missing phen data for demographic tracking of individuals 
+phen_dem<-rbind(phen_dem, nophen)
+
 
 save(phen_dem, file='data/DLphen_w_priorvisit.Rdata')
 #load('data/DLphen_w_priorvisit.Rdata')
+  
