@@ -2,6 +2,7 @@
 # load libraries
 library(dplyr)
 library (tidyr)
+library(tidyverse)
 library (magrittr)
 library (readxl)
 
@@ -328,14 +329,55 @@ mutate(doy=if_else(is.na(doy), doy_max, doy))
 #check that all prior visits are earlier than doys & vice-versa
 check<-phen_dem%>% mutate(check=doy-pv_min, check2=doy_max-prior_visit)
 
-#then take average bw prior visit and doy as 'censored' phen observation
-phen_dem$DOY<-round((phen_dem$doy+phen_dem$prior_visit)/2)
-plot(phen_dem$DOY~phen_dem$doy)#visualize - error gets worse for later phenophases 
 
 #put back in rows with missing phen data for demographic tracking of individuals 
 phen_dem<-rbind(phen_dem, nophen)
 
+#then take average bw prior visit and doy as 'censored' phen observation
+phen_dem$DOY<-round((phen_dem$doy+phen_dem$prior_visit)/2)
+plot(phen_dem$DOY~phen_dem$doy)#visualize - error gets worse for later phenophases 
 
+
+#work on trait values->clean and make numeric 
+#need to make sure zeroes are true zeroes not just unmeasured individuals**ISSUE #1 
+
+#traits<-filter(phen_dem, !is.na(value))
+#unique(traits$value)#too many
+#traits<-separate(traits, value, into = "valx", remove=F, sep = " ")%>%select(value, valx)%>%
+#  mutate(match=if_else(value==valx, T, F))%>%mutate(valy=extract_numeric(valx))
+
+phen_dem<- separate(phen_dem, value, into = "valx", sep = " ") %>%mutate(value=extract_numeric(valx))%>%select(-valx)
+hist(phen_dem$value)
+
+#fix more naming
+unique(phen_dem$phen_stage)
+phen_dem<-mutate(phen_dem, phen_stage=str_replace(phen_stage, " ", "_"))%>% #fill blanks with underscores 
+  mutate(phen_stage=str_replace(phen_stage, "\\.", ""))
+unique(phen_dem$phen_stage)
+
+sort(unique(phen_dem$trait))
+phen_dem<-
+        mutate(phen_dem, trait=case_when(
+      (trait=="mean diametre"|trait=="Mean_diametre"|trait=="mean diameter (mm)")~"mean_diam_mm", 
+      (trait=="Mean growth increment (mm)"|trait=="mean growth increment(mm)"|trait=="mean_growth increment") ~"mean_growth_inc_mm", 
+      (trait=="Mean leaf  length (mm)"|trait=="mean_leaf length"|trait=="Q3_mean")~"mean_leaf_length_mm", 
+      trait=="Q2_longest leaf (mm)"~"longest_leaf_mm",
+      trait=="Sum green_leaf length"~"sum_green_leaf_length_mm",   
+      (trait=="Q1 no. of flowering stalks"|trait=="Q1_no. stalks")~"no_flower_stalks", 
+      trait=="Q1 no. of flowers"~"no_flowers", 
+      trait=="Q2 no. of fruit"~ "no_fruit", 
+      trait=="Q1_no. male catkins"~"no_male_catkins", 
+      trait=="Q2_no. female"~"no_female_catkins", 
+      trait=="Q1_total no. catkins"~"no_catkins", 
+      trait=="Q1_total no. catkins"~"no_catkins", 
+      trait=="Q1a no. of buds"~"no_flower_buds", 
+      trait=="Q1b no. of pods"~"no_seed_pods", 
+      trait== "Q2 number of flowers/ stalk" ~"no_flowers_per_stalk", 
+      trait== "Q3 number of fruit / stalk"~"no_fruit_per_stalk", TRUE~trait))
+
+sort(unique(phen_dem$trait)) #so much better 
+
+str(phen_dem)
 save(phen_dem, file='data/DLphen_w_priorvisit.Rdata')
 #load('data/DLphen_w_priorvisit.Rdata')
-  
+
