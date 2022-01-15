@@ -88,7 +88,7 @@ cols_to_keep=c(#all
                "Q1 no. of flowering stalks", "mean diameter (mm)", 
                #eriophorum
                "P3_1st bud","P4_1st anther","P5_seed shed", "Q1_no. stalks", "mean_leaf length","Q3_mean",
-               "Mean_diametre",                     
+               "Mean_diametre", "mean shaft_length" , "Mean_shaft length",                     
                #carex
                "P3_1st stigma", "P4_1st anther", "P5_yellow leaf",   
                "P6_seed shed","Sum green_leaf length")
@@ -147,7 +147,7 @@ phen%<>%filter(!is.na(`ID no.`))%>%
                                            "Mean growth increment (mm)",
                                            "Q1_total no. catkins", "Q2_longest leaf (mm)", "mean_growth increment",
                                            "mean diameter (mm)",  "Q2 number of flowers/ stalk", 
-                                           "Q3 number of fruit / stalk",
+                                           "Q3 number of fruit / stalk", "mean shaft_length" , "Mean_shaft length",      
                                           "Q3_mean",  "mean_leaf length", "Mean_diametre",
                                            "Q3_mean", "Sum green_leaf length"))
 
