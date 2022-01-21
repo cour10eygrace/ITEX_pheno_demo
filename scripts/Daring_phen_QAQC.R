@@ -12,7 +12,7 @@ source('scripts/utility_functions_all.R')
 
 
 # -- READ PHENOLOGY DATA ----
-excelfile='data/2021 ITEX multi-year phenology_clean.xlsx'
+excelfile='data/2021 ITEX multi-year phenology_raw.xlsx'
 sheets=excel_sheets(excelfile)
 
 new_data=list()
@@ -48,50 +48,66 @@ for (j in sheets){
 
 new_data=lapply(new_data, function(x) setNames(x, gsub('NA_|_NA', '', names(x))))
 
-
 #this includes phenology data and growth/size, repro counts 
+#only keep raw data-re-compute means later
 cols_to_keep=c(#all
                "Location", "Year", "ID no.", "sheet", "Notes", 
                #oxtytropis
               #"P1( MET) snow free", #leave these out for now and just use on the ground obs
                "P1 (obs)a snow free",
                "P2a 1st green leaf","P2b 1st flower bud","P3 1st flower open","P4 1st petal drop",
-               "P5 last petal drop","P6 1st seed shed","Q1a no. of buds", "Q1b no. of pods", "mean diametre", 
+               "P5 last petal drop","P6 1st seed shed","Q1a no. of buds", "Q1b no. of pods", "Q2 length (mm)", "Q2 width (mm)",  
                #ledum
                #"P1 (MET) snow free",
-               "P1 (obs) snow free", 
-               "P2 flower buds visible","P3 first flower open", 
-               "P4 first flower shed",  "P5 last flower shed","P6 first fruit visible",  
-               "Q1 no. of flowering stalks", "Q2 number of flowers/ stalk", "Q3 number of fruit / stalk", 
-               "mean growth increment(mm)",
-               #vaccinium
+              "P1 (obs) snow free", "P2 flower buds visible",     
+              "P3 first flower open","P4 first flower shed","P5 last flower shed", "P6 first fruit visible",  
+              "Q1 no. flowering stalks","Q2 number of flowers/ stalk...14", "Q2 number of flowers/ stalk...15",
+              "Q2 number of flowers/ stalk...16", "Q3 number of fruit / stalk...18", 
+              "Q3 number of fruit / stalk...19", "Q3 number of fruit / stalk...20",
+              "Q 4 Growth Increment(mm)...23", "Q 4 Growth Increment(mm)...24","Q 4 Growth Increment(mm)...25", 
+              #OTC
+              "Q1 no. flowering stalks" , "Q2 no. flowers/ stalk...14", "Q2 no. flowers/ stalk...15",
+              "Q2 no. flowers/ stalk...16","Q2 no. flowers/ stalk...17",  "Q3 no. fruit/ stalk...19",
+              "Q3 no. fruit/ stalk...20", "Q3 no. fruit/ stalk...21", "Q3 no. fruit/ stalk...22",       
+              "Q4 growth increment...25", "Q4 growth increment...26",   "Q4 growth increment...27", 
+             #vaccinium & OTC
                "P1(obs) snow free",
-               "P2 flower bud visible", "Q1 no. of flowers", "Q2 no. of fruit", 
-               #betula
+               "P2 flower bud visible", "Q1 no. of flowers", "Q2 no. of fruit",  "Q3 growth increment (mm)...17",
+               "Q3 growth increment (mm)...18", "Q3 growth increment (mm)...19", "Q3 growth increment...17" ,
+               "Q3 growth increment...18" ,  "Q3 growth increment...19",
+             #betula
                #"P1(MET)",
-               "P1(obs)",
-               "P2_1st leaf",  "P3a_1st male catkin","P3b_1st female catkin",
-               "P4a_1st stigma","P4b_pollen shed",   "P5a_1st leaf turn",
-               "P5b_last leaf turn","P6_1st leaf shed",  "P7_all shed",  
-               "Q1_no. male catkins", "Q2_no. female", "Mean leaf  length (mm)", 
-               "Mean growth increment (mm)",
-               #salix 
+               "P1(obs)", "P2_1st leaf","P3a_1st male catkin","P3b_1st female catkin",     
+               "P4a_1st stigma", "P4b_pollen shed", "P5a_Ist leaf turn","P5b_last leaf turn", "P6_1st leaf shed" ,"P7_all shed",
+               "Q1_no. male catkins", "Q2_no. female", "Q3_leaf length1",   "Q3_leaf length2","Q3_leaf length3",
+               "Q4_growth increment1", "Q4_growth increment2", 'Q4_growth increment3',
+              #salix 
                #"P1(MET)_snow", 
                "P1(obs)_snow free",
                "P2_1st leaf bud",  
                "P3a_1st stigma","P3b_pollen shed",   "P4_1st leaf turn", 
                "P5_last leaf turn", "P6_1st abs. of leaf","P7_all leaf shed", 
-               "P8_seed disp.", "Q1_total no. catkins", "Q2_longest leaf (mm)", "mean_growth increment",
+               "P8_seed disp.", "Q1_total no. catkins", "Q2_longest leaf (mm)", "Q4_no. mature female catkins",
+               "Q6.1_growth  increment (mm)", "Q6.2_growth  increment (mm)", "Q6.3_growth  increment (mm)", 
+             
                #Saxifraga
                "P2 first new leaves","P3 first flower buds visible",
                "P4 first flower open",  "P5 first petal shed","P6 last petal shed",
-               "Q1 no. of flowering stalks", "mean diameter (mm)", 
+               "Q1 no. of flowering stalks", "Q2 diam1", "Q2 diam2", "Q2 diam3",           
                #eriophorum
-               "P3_1st bud","P4_1st anther","P5_seed shed", "Q1_no. stalks", "mean_leaf length","Q3_mean",
-               "Mean_diametre", "mean shaft_length" , "Mean_shaft length",                     
+               "P3_1st bud","P4_1st anther","P5_seed shed", "Q1_no. stalks", "Q2_early_season_shaft_length_mm",
+             "Q2.1_early_season_shaft_length_mm","Q2.2_early_season_shaft_length_mm","Q2.3_early_season_shaft_length_mm",
+             "Q2.4_early_season_shaft_length_mm","Q2.5_early_season_shaft_length_mm","Q2.6_early_season_shaft_length_mm",
+             "Q2.7_early_season_shaft_length_mm","Q2.8_early_season_shaft_length_mm","Q2.9_early_season_shaft_length_mm",
+              "Q2_late_season_shaft_length_mm", "Q2.1_late_season_shaft_length_mm","Q2.2_late_season_shaft_length_mm",
+             "Q2.3_late_season_shaft_length_mm","Q2.4_late_season_shaft_length_mm","Q2.5_late_season_shaft_length_mm",
+             "Q2.6_late_season_shaft_length_mm","Q2.7_late_season_shaft_length_mm","Q2.8_late_season_shaft_length_mm",
+             "Q2.9_late_season_shaft_length_mm","Q3_leaf_length_mm" , "Q3.1_leaf_length_mm" ,
+               "Q3.2_leaf_length_mm" , "Q3.3_leaf_length_mm" , "Q3.4_leaf_length_mm" , "Q3.5_leaf_length_mm" ,
+               "Q3.6_leaf_length_mm",  "Q3.7_leaf_length_mm" , "Q3.8_leaf_length_mm",  "Q3.9_leaf_length_mm" ,
+                "Q4_tussock_diam_cm1","Q4_tussock_diam_cm2","Q4_tussock_diam_cm3",     
                #carex
-               "P3_1st stigma", "P4_1st anther", "P5_yellow leaf",   
-               "P6_seed shed","Sum green_leaf length")
+               "P3_1st stigma", "P5_yellow leaf", "P6_seed shed","Q2_stalk length (mm)" )
 
 #select only the cols you want
 phen=lapply(new_data, function(x) x=x[,names(x)%in%cols_to_keep])
@@ -138,18 +154,17 @@ phen=phen[-dup2,]
 
 #make long
 #separate phen and non-phen 
-phen%<>%filter(!is.na(`ID no.`))%>%
- gather(key='phen_stage', value='doy', -c('species','treatment', 'Location','Year', 
-                                           'ID no.', 'Notes',"Q1a no. of buds",	"Q1b no. of pods",	"mean diametre", 
-                                            "mean growth increment(mm)", "Q1_no. stalks", "Q1 no. of flowering stalks",
-                                            "Q1 no. of flowers",	"Q2 no. of fruit",	"mean growth increment(mm)" ,
-                                           "Q1_no. male catkins", "Q2_no. female", "Mean leaf  length (mm)", 
-                                           "Mean growth increment (mm)",
-                                           "Q1_total no. catkins", "Q2_longest leaf (mm)", "mean_growth increment",
-                                           "mean diameter (mm)",  "Q2 number of flowers/ stalk", 
-                                           "Q3 number of fruit / stalk", "mean shaft_length" , "Mean_shaft length",      
-                                          "Q3_mean",  "mean_leaf length", "Mean_diametre",
-                                           "Q3_mean", "Sum green_leaf length"))
+phen%<>%filter(!is.na(`ID no.`))%>% #remove NAs in ID number 
+ gather(key='phen_stage', value='doy', c("all leaf shed", "all shed","first abs. of leaf",               
+                                         "first anther", "first bud","first female catkin" ,             
+                                         "first flower bud", "first flower open", "first flower shed",                
+                                         "first fruit visible","first green leaf", "first leaf" ,                      
+                                         "first leaf bud", "first leaf shed", "first leaf turn",                  
+                                         "first male catkin","first new leaves", "first petal drop" ,                
+                                         "first petal shed","first seed shed", "first stigma",
+                                         "last flower shed" ,"last leaf turn", "last petal drop", 
+                                         "last petal shed", "obs", "obs snow free",                    
+                                         "pollen shed"  , "seed disp." ,"seed shed", "yellow leaf"))
 
 phen<-filter(phen, !is.na(`ID no.`))%>%
   gather(key='trait', value='value', -c('species','treatment', 'Location','Year', 
@@ -337,26 +352,6 @@ phen_dem<-rbind(phen_dem, nophen)
 phen_dem$DOY<-round((phen_dem$doy+phen_dem$prior_visit)/2)
 plot(phen_dem$DOY~phen_dem$doy)#visualize - error gets worse for later phenophases 
 
-
-#work on trait values->clean and make numeric 
-#need to make sure zeroes are true zeroes not just unmeasured individuals**ISSUE #1 
-
-#traits<-filter(phen_dem, !is.na(value))
-#unique(traits$value)#too many
-#traits<-separate(traits, value, into = "valx", remove=F, sep = " ")%>%select(value, valx)%>%
-#  mutate(match=if_else(value==valx, T, F))%>%mutate(valy=extract_numeric(valx))
-
-phen_dem<- separate(phen_dem, value, into = "valx", sep = " ") %>%mutate(value=extract_numeric(valx))%>%select(-valx)
-hist(phen_dem$value)
-
-#fix more naming
-unique(phen_dem$phen_stage)
-phen_dem<-mutate(phen_dem, phen_stage=str_replace_all(phen_stage, " ", "_"))%>% #fill blanks with underscores 
-  mutate(phen_stage=str_replace(phen_stage, "\\.", ""))
-unique(phen_dem$phen_stage)
-
-
-str(phen_dem)
 save(phen_dem, file='data/DLphen_w_priorvisit.Rdata')
 #load('data/DLphen_w_priorvisit.Rdata')
 
