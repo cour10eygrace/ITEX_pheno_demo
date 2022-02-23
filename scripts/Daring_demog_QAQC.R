@@ -6,9 +6,11 @@ load('data/DLphen_w_priorvisit.Rdata')
 #ISSUES 
 #need to make sure zeroes are true zeroes not just unmeasured individuals**ISSUE #1 
 #ensure consistent measurement units (cm vs mm across years) **ISSUE #2 
-#deal with different names for OTC vs CTL within a species **ISSUE #3
+#traits-calculate means when multiple measurements within an individual ? or keep separate for hierarchical modeling? 
+#deal with different measurement names for OTC vs CTL within a species **ISSUE #3
 #deal with plant ids different across years and renaming of new individuals with 'a' **ISSUE #4 
-#traits-calculate means when multiple measurements within an individual ? or keep separate for hierarchical modeling?
+#check when individuals are marked 'dead' in the Notes and see if this matches with id numbering changes  
+#differentiate between spp where 'a', 'b' is a new individual vs a new branch within same individual 
 
 #trait/demographic values-> make numeric 
 #deal with weird entries 
@@ -40,9 +42,7 @@ phen_dem$value[phen_dem$value==935]=94
 phen_dem$value[phen_dem$value==750]=75
 hist(phen_dem$value) #looks good 
 
-#deal with plant_ids
-#mutate(phen_dem,plantid=as.character(extract_numeric(plant_id)))%>%
-  
+#deal with plant_ids- Issue #4
 ids<-mutate(phen_dem, plantid= gsub(".*[^0-9]","",plant_id))%>% #take letters off front 
    mutate(plantid=if_else(plantid=="", plant_id, plantid))%>% #keep letters at end 
    mutate(plantid = str_remove(plantid, "^0+"))%>% #remove zeroes from front 
@@ -66,25 +66,32 @@ ids<-mutate(ids, plantid=case_when(plantid=="124a"~"134a", #betula #typo checked
 phen_dem<-left_join(phen_dem, ids)
 
 #update in specific years, species 
-phen_dem$plantid[phen_dem$plantid=='209'&phen_dem$species=="oxytropis"]=272 #typo 
 phen_dem$plantid[phen_dem$plantid=='260'&phen_dem$species=="carex"]=206 #typo 
 phen_dem$plantid[phen_dem$plantid=='160'&phen_dem$species=="saxifraga"]=16 #typo 
+phen_dem$plantid[phen_dem$plantid=='209'&phen_dem$species=="oxytropis"]=272 #typo 
 phen_dem$plantid[phen_dem$plantid=='14a'&phen_dem$species=="saxifraga"]=14 #inconsistent naming-update 
 phen_dem$plantid[phen_dem$plantid=='3'&phen_dem$species=="eriophorum"&phen_dem$year>2000&phen_dem$treatment=="CTL"]='3a' 
-phen_dem$plantid[phen_dem$plantid=='261a']=NA #only measured once 
-phen_dem$plantid[phen_dem$plantid=='260a']=NA #unclear why added in 2019
-phen_dem$plantid[phen_dem$plantid=='132a']=NA #inconsistent naming-remove 
+phen_dem$plantid[phen_dem$plantid=='261'&phen_dem$species=="oxytropis"&phen_dem$year>2019]='261a' #inconsistent naming-update
+phen_dem$plantid[phen_dem$plantid=='132a']=NA #inconsistent naming-remove #132 measured all years so use this
 phen_dem$plantid[phen_dem$plantid=='???']=NA
+phen_dem$plantid[phen_dem$plantid=='213'&phen_dem$species=="saxifraga"]=NA #extra id not measured in other years-remove  
+phen_dem$plantid[phen_dem$plantid=='118'&phen_dem$species=="salix"&phen_dem$year==2001]=NA #inconsistent naming-remove #118a measured 2001 so use this
+phen_dem$plantid[phen_dem$plantid=='260a'&phen_dem$species=="oxytropis"]=NA #only measured in 1 year and 260 measured every yr
+
 #lots of issues with betula & salix naming consistency across years for new tagged branches
 #went with the most consistent name used across later years when no clear notes indicating whats going on 
-#anything in the years after the 'a' added also keeps an 'a' can't go back to number only 
+#anything in the years after the 'a' added also keeps an 'a' can't go back to number only for example
 phen_dem$plantid[phen_dem$plantid=='136'&phen_dem$species=="betula"&phen_dem$year>1998]='136a'   
 phen_dem$plantid[phen_dem$plantid=='147'&phen_dem$species=="betula"&phen_dem$year>1998]='147a'   
-phen_dem$plantid[phen_dem$plantid=='145'&phen_dem$species=="betula"&phen_dem$year==2006]=145   
+phen_dem$plantid[phen_dem$plantid=='145a'&phen_dem$species=="betula"&phen_dem$year==2006]=145   
 phen_dem$plantid[phen_dem$plantid=='112'&phen_dem$species=="betula"&phen_dem$year>2005& phen_dem$year<2013]='112a'   
 phen_dem$plantid[phen_dem$plantid=='112b'&phen_dem$species=="betula"&phen_dem$year>2005& phen_dem$year<2013]='112a'   
 phen_dem$plantid[phen_dem$plantid=='114'&phen_dem$species=="betula"&phen_dem$year>2005& phen_dem$year<2013]='114a'   
 phen_dem$plantid[phen_dem$plantid=='114b'&phen_dem$species=="betula"&phen_dem$year>2005& phen_dem$year<2013]='114a'   
+phen_dem$plantid[phen_dem$plantid=='134'&phen_dem$species=="betula"&phen_dem$year>2005& phen_dem$year<2013]='134a'
+phen_dem$plantid[phen_dem$plantid=='138'&phen_dem$species=="betula"&phen_dem$year>2005& phen_dem$year<2016]='138a'
+phen_dem$plantid[phen_dem$plantid=='145a'&phen_dem$species=="betula"&phen_dem$year>2007]='145'
+phen_dem$plantid[phen_dem$plantid=='118a'&phen_dem$species=="salix"&phen_dem$year>2007& phen_dem$year<2017]='118b'
 phen_dem$plantid[phen_dem$plantid=='107'&phen_dem$species=="salix"&phen_dem$year==2011]='107a'   
 phen_dem$plantid[phen_dem$plantid=='110'&phen_dem$species=="salix"&phen_dem$year==2007]='110a'   
 phen_dem$plantid[phen_dem$plantid=='115'&phen_dem$species=="salix"&phen_dem$year>2005]='115a'   
@@ -94,18 +101,65 @@ phen_dem$plantid[phen_dem$plantid=='106'&phen_dem$species=="salix"&phen_dem$year
 phen_dem$plantid[phen_dem$plantid=='121'&phen_dem$species=="salix"&phen_dem$year>2001]='121a'
 phen_dem$plantid[phen_dem$plantid=='105'&phen_dem$species=="salix"&phen_dem$year>2008]='105a'
 phen_dem$plantid[phen_dem$plantid=='109'&phen_dem$species=="salix"&phen_dem$year>2006]='109a'
+phen_dem$plantid[phen_dem$plantid=='114'&phen_dem$species=="salix"&phen_dem$year>2005& phen_dem$year<2013]='114a' 
+phen_dem$plantid[phen_dem$plantid=='114b'&phen_dem$species=="salix"&phen_dem$year>2005& phen_dem$year<2013]='114a' 
+phen_dem$plantid[phen_dem$plantid=='112'&phen_dem$species=="salix"&phen_dem$year==2007]='112a'
+phen_dem$plantid[phen_dem$plantid=='112'&phen_dem$species=="salix"&phen_dem$year==2010]='112b'
+phen_dem$plantid[phen_dem$plantid=='112'&phen_dem$species=="salix"&phen_dem$year==2011]='112b'
+phen_dem$plantid[phen_dem$plantid=='112a'&phen_dem$species=="salix"&phen_dem$year==2012]='112b'
+phen_dem$plantid[phen_dem$plantid=='207'&phen_dem$species=="carex"&phen_dem$year>2003]='207a' 
+
 
 #OTCs put in 2001-data much more consistent after this time frame as well 
 phen_dem<-filter(phen_dem, year>2000)
 
-#left off here 1/20/22
+#check plant IDs with low counts-
+#double check that years are either at beginning or end of series sequentially
 check<- group_by(phen_dem,species, treatment, plantid)%>%
-  mutate(count=n_distinct(year))%>%select(species, treatment, plantid, count)%>%distinct(.)
+  mutate(count=n_distinct(year))%>%select(species, treatment, plantid, count, year)%>%distinct(.)%>%
+  arrange(count, plantid, year)%>%
+  group_by(species, treatment, plantid, count) %>%
+  summarise(year = paste(year, collapse = ","))%>%
+  separate(year, into = c('y1', 'y2', 'y3', 'y4', 'y5', 'y6', 'y7', 'y8', 'y9', 'y10', 
+                          'y11', 'y12', 'y13', 'y14', 'y15', 'y16', 'y17', 'y18', 'y19', 'y20', 'y21'))
+
+check<-left_join(check, check2)
+check2<-read.csv('check.csv') #notes from manually checking all 2/22/22
+check<-filter(check, count<21)%>% relocate(Notes, .after=count)
+
+
+#dead stuff 
+dead_check<-select(phen_dem, year, plantid,Notes, species, treatment)%>%filter(grepl("dead|died|new plant|New Plant|Dead|Died",Notes))%>%
+                                distinct(.)%>%filter(!grepl("bud|Bud|pod|flower|Flower|stalk|Partially|almost|looks",Notes))
+
+#unresolved 
+#vaccinium CTL #5 marked dead 2002- No new tag in 2003
+#vaccinium CTL #12,15,16,18 marked dead 2013- No new tag in 2014
+#vaccinium 14-says new plant tagged in 2013 but not re-named 
+#saxifraga #5 marked dead 2014, No new tag in 2015
+#oxytropis #269 marked dead 2014, No new tag in 2015
+#oxytropis #3, 9 marked dead 2020, No new tag in 2021
+#ledum 9 marked dead 2002, no new tag 2003
+#oxytropis 261 says retagged 2013 but no new tag 2014
+#carex #304, 309, 316 marked dead 2011, No new tag in 2012
+#salix #116a marked dead 2009, No new tag in 2010
+#betula #142 marked dead 2011, No new tag in 2012
+#betula #138a marked dead 2011 & 2012, No new tag in 2013
+#betula #132 marked dead 2008, no new tag 2009
+
+
+#correct
+#oxytropis #1, 2 marked dead 2020, changed to 1a, 2a in 2021
+#salix #106 marked dead 2004-changed to 106a 2004
+#betula #134a branch marked dead 2004-changed to 134a 2004-assuming measurements in 2004 are from newly tagged branch
+#betula 130a-branch marked dead in 2012 and renamed 130a in 2012-assuming measurements in 2012 are from newly tagged branch
+#oxytropis 261 died 2014, retagged 261a, not remeasured until 2019 
 
 #deal with zeroes 
 unique(phen_dem$trait)
 
-#measurement ids within individuals 
+#measurement ids within individuals-EG branches
+
 
 
 
