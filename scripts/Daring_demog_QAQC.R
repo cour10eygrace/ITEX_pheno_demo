@@ -123,12 +123,11 @@ check<- group_by(phen_dem,species, treatment, plantid)%>%
   separate(year, into = c('y1', 'y2', 'y3', 'y4', 'y5', 'y6', 'y7', 'y8', 'y9', 'y10', 
                           'y11', 'y12', 'y13', 'y14', 'y15', 'y16', 'y17', 'y18', 'y19', 'y20', 'y21'))
 
-check<-left_join(check, check2)
-check2<-read.csv('check.csv') #notes from manually checking all 2/22/22
-check<-filter(check, count<21)%>% relocate(Notes, .after=count)
+check2<-read.csv('data/plantids.csv') #notes from manually checking all ids 2/22/22
+check<-left_join(check, check2)%>%relocate(Notes, .after=count)
 
 
-#dead stuff 
+#look at dead stuff 
 dead_check<-select(phen_dem, year, plantid,Notes, species, treatment)%>%filter(grepl("dead|died|new plant|New Plant|Dead|Died",Notes))%>%
                                 distinct(.)%>%filter(!grepl("bud|Bud|pod|flower|Flower|stalk|Partially|almost|looks",Notes))
 
@@ -154,6 +153,14 @@ dead_check<-select(phen_dem, year, plantid,Notes, species, treatment)%>%filter(g
 #betula #134a branch marked dead 2004-changed to 134a 2004-assuming measurements in 2004 are from newly tagged branch
 #betula 130a-branch marked dead in 2012 and renamed 130a in 2012-assuming measurements in 2012 are from newly tagged branch
 #oxytropis 261 died 2014, retagged 261a, not remeasured until 2019 
+
+#for now, let's just remove the unresolved dead ids
+dead_check<-select(dead_check, plantid, species)
+phen_dem<-anti_join(phen_dem, dead_check)
+phen_dem$plantid[phen_dem$plantid=='138'|phen_dem$plantid=='138b'&phen_dem$species=="betula"]=NA
+
+#remove plant ids set to NA
+phen_dem<-filter(phen_dem, !is.na(plantid))
 
 #deal with zeroes 
 unique(phen_dem$trait)

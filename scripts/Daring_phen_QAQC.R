@@ -61,20 +61,19 @@ cols_to_keep=c(#all
                #"P1 (MET) snow free",
               "P1 (obs) snow free", "P2 flower buds visible",     
               "P3 first flower open","P4 first flower shed","P5 last flower shed", "P6 first fruit visible",  
-              "Q1 no. flowering stalks","Q2 number of flowers/ stalk...14", "Q2 number of flowers/ stalk...15",
-              "Q2 number of flowers/ stalk...16", "Q3 number of fruit / stalk...18", 
-              "Q3 number of fruit / stalk...19", "Q3 number of fruit / stalk...20",
-              "Q 4 Growth Increment(mm)...23", "Q 4 Growth Increment(mm)...24","Q 4 Growth Increment(mm)...25", 
+              "Q1 no. flowering stalks","Q2.1 number of flowers/ stalk", "Q2.2 number of flowers/ stalk", "Q2.3 number of flowers/ stalk", 
+              "Q3.1 number of fruit / stalk"  ,"Q3.2 number of fruit / stalk",  "Q3.3 number of fruit / stalk" ,
+              "Q 4.1 Growth Increment(mm)"   ,"Q 4.2 Growth Increment(mm)","Q 4.3 Growth Increment(mm)",  
               #OTC
-              "Q1 no. flowering stalks" , "Q2 no. flowers/ stalk...14", "Q2 no. flowers/ stalk...15",
-              "Q2 no. flowers/ stalk...16","Q2 no. flowers/ stalk...17",  "Q3 no. fruit/ stalk...19",
-              "Q3 no. fruit/ stalk...20", "Q3 no. fruit/ stalk...21", "Q3 no. fruit/ stalk...22",       
-              "Q4 growth increment...25", "Q4 growth increment...26",   "Q4 growth increment...27", 
-             #vaccinium & OTC
+              "Q1 no. flowering stalks" ,"Q2.1 no. flowers/ stalk", "Q2.2 no. flowers/ stalk","Q2.3 no. flowers/ stalk", 
+              "Q2.4 no. flowers/ stalk","Q3.1 no. fruit/ stalk" ,  "Q3.2 no. fruit/ stalk","Q3.3 no. fruit/ stalk", 
+              "Q3.4 no. fruit/ stalk" , "Q4.1 growth increment","Q4.2 growth increment" , "Q4.3 growth increment", 
+             #vaccinium 
                "P1(obs) snow free",
-               "P2 flower bud visible", "Q1 no. of flowers", "Q2 no. of fruit",  "Q3 growth increment (mm)...17",
-               "Q3 growth increment (mm)...18", "Q3 growth increment (mm)...19", "Q3 growth increment...17" ,
-               "Q3 growth increment...18" ,  "Q3 growth increment...19",
+               "P2 flower bud visible", "Q1 no. of flowers", "Q2 no. of fruit",  "Q3.1 growth increment (mm)", 
+               "Q3.2 growth increment (mm)",  "Q3.3 growth increment (mm)",  
+              #OTC
+              "Q3.1 growth increment"   ,   "Q3.2 growth increment"   ,   "Q3.3 growth increment"  ,
              #betula
                #"P1(MET)",
                "P1(obs)", "P2_1st leaf","P3a_1st male catkin","P3b_1st female catkin",     
@@ -84,25 +83,24 @@ cols_to_keep=c(#all
               #salix 
                #"P1(MET)_snow", 
                "P1(obs)_snow free",
-               "P2_1st leaf bud",  
-               "P3a_1st stigma","P3b_pollen shed",   "P4_1st leaf turn", 
-               "P5_last leaf turn", "P6_1st abs. of leaf","P7_all leaf shed", 
-               "P8_seed disp.", "Q1_total no. catkins", "Q2_longest leaf (mm)", "Q4_no. mature female catkins",
-               "Q6.1_growth  increment (mm)", "Q6.2_growth  increment (mm)", "Q6.3_growth  increment (mm)", 
+               "P2_1st leaf bud", "P3a_1st stigma","P3b_pollen shed", "P4_1st leaf turn", "P5_last leaf turn", 
+               "P6_1st abs. of leaf", "P8_seed disp.", "Q1_total no. catkins", "Q2_longest leaf (mm)",
+               "Q4_no. mature female catkins", "Q6.1_growth  increment (mm)", "Q6.2_growth increment (mm)",
+               "Q6.3_growth  increment (mm)", 
              
                #Saxifraga
                "P2 first new leaves","P3 first flower buds visible",
                "P4 first flower open",  "P5 first petal shed","P6 last petal shed",
                "Q1 no. of flowering stalks", "Q2 diam1", "Q2 diam2", "Q2 diam3",           
-               #eriophorum
+               #eriophorum & OTC
                "P3_1st bud","P4_1st anther","P5_seed shed", "Q1_no. stalks", "Q2_early_season_shaft_length_mm",
-             "Q2.1_early_season_shaft_length_mm","Q2.2_early_season_shaft_length_mm","Q2.3_early_season_shaft_length_mm",
-             "Q2.4_early_season_shaft_length_mm","Q2.5_early_season_shaft_length_mm","Q2.6_early_season_shaft_length_mm",
-             "Q2.7_early_season_shaft_length_mm","Q2.8_early_season_shaft_length_mm","Q2.9_early_season_shaft_length_mm",
-              "Q2_late_season_shaft_length_mm", "Q2.1_late_season_shaft_length_mm","Q2.2_late_season_shaft_length_mm",
-             "Q2.3_late_season_shaft_length_mm","Q2.4_late_season_shaft_length_mm","Q2.5_late_season_shaft_length_mm",
-             "Q2.6_late_season_shaft_length_mm","Q2.7_late_season_shaft_length_mm","Q2.8_late_season_shaft_length_mm",
-             "Q2.9_late_season_shaft_length_mm","Q3_leaf_length_mm" , "Q3.1_leaf_length_mm" ,
+               "Q2.1_early_season_shaft_length_mm","Q2.2_early_season_shaft_length_mm","Q2.3_early_season_shaft_length_mm",
+               "Q2.4_early_season_shaft_length_mm","Q2.5_early_season_shaft_length_mm","Q2.6_early_season_shaft_length_mm",
+               "Q2.7_early_season_shaft_length_mm","Q2.8_early_season_shaft_length_mm","Q2.9_early_season_shaft_length_mm",
+               "Q2_late_season_shaft_length_mm", "Q2.1_late_season_shaft_length_mm","Q2.2_late_season_shaft_length_mm",
+               "Q2.3_late_season_shaft_length_mm","Q2.4_late_season_shaft_length_mm","Q2.5_late_season_shaft_length_mm",
+               "Q2.6_late_season_shaft_length_mm","Q2.7_late_season_shaft_length_mm","Q2.8_late_season_shaft_length_mm",
+               "Q2.9_late_season_shaft_length_mm","Q3_leaf_length_mm" , "Q3.1_leaf_length_mm" ,
                "Q3.2_leaf_length_mm" , "Q3.3_leaf_length_mm" , "Q3.4_leaf_length_mm" , "Q3.5_leaf_length_mm" ,
                "Q3.6_leaf_length_mm",  "Q3.7_leaf_length_mm" , "Q3.8_leaf_length_mm",  "Q3.9_leaf_length_mm" ,
                 "Q4_tussock_diam_cm1","Q4_tussock_diam_cm2","Q4_tussock_diam_cm3",     
@@ -155,7 +153,7 @@ phen=phen[-dup2,]
 #make long
 #separate phen and non-phen 
 phen%<>%filter(!is.na(`ID no.`))%>% #remove NAs in ID number 
- gather(key='phen_stage', value='doy', c("all leaf shed", "all shed","first abs. of leaf",               
+ gather(key='phen_stage', value='doy', c("all shed","first abs. of leaf",               
                                          "first anther", "first bud","first female catkin" ,             
                                          "first flower bud", "first flower open", "first flower shed",                
                                          "first fruit visible","first green leaf", "first leaf" ,                      
@@ -170,9 +168,8 @@ phen<-filter(phen, !is.na(`ID no.`))%>%
   gather(key='trait', value='value', -c('species','treatment', 'Location','Year', 
                                            'ID no.', 'Notes','phen_stage', 'doy'))
 
-#check both
+#check naming
 sort(unique(phen$phen_stage))
-sort(unique(phen$trait))
 
 #remove phenophases for which there is NEVER data-mostly due to diff naming across spp 
 # these not relevant in keeping NAs
@@ -351,6 +348,21 @@ phen_dem<-rbind(phen_dem, nophen)
 #then take average bw prior visit and doy as 'censored' phen observation
 phen_dem$DOY<-round((phen_dem$doy+phen_dem$prior_visit)/2)
 plot(phen_dem$DOY~phen_dem$doy)#visualize - error gets worse for later phenophases 
+
+
+#plot all phen
+specColor <- c(
+  "#89C5DA", "#DA5724", "#74D944", "#CE50CA", "#3F4921", "#C0717C", "#CBD588", "#5F7FC7",
+  "#673770", "#D3D93E", "#38333E", "#508578", "#D7C1B1", "#689030", "#AD6F3B", "#CD9BCD",
+  "#D14285", "#6DDE88", "#652926", "#7FDCC0", "#C84248", "#8569D5", "#5E738F", "#D1A33D",
+  "#8A7C64", "#599861", "#89C5DA", "#DA5724", "#74D944", "#CE50CA", "#3F4921", "#C0717C", "#CBD588", "#5F7FC7",
+  "#673770", "#D3D93E", "#38333E", "#508578", "#D7C1B1", "#689030", "#AD6F3B", "#CD9BCD",
+  "#D14285", "#6DDE88", "#652926", "#7FDCC0", "#C84248", "#8569D5", "#5E738F", "#D1A33D",
+  "#8A7C64", "#599861")
+
+ggplot(phen_dem, aes(DOY, fill=species))+
+  geom_histogram(alpha=0.7)+ scale_fill_manual(values=specColor[c(1:5,34:36,38:40)]) +
+  facet_wrap(~phen_stage+treatment, scales="free")+ theme_bw()
 
 save(phen_dem, file='data/DLphen_w_priorvisit.Rdata')
 #load('data/DLphen_w_priorvisit.Rdata')
