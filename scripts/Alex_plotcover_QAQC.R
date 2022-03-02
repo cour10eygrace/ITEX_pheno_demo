@@ -3,7 +3,7 @@
 #'Point_Frame Data_AllYears_AllSites_(1995-2010).xls'
 library(dplyr)
 library(tidyr)
-plot_cover<-read.csv("data/Spp_abundance_XYs.csv")
+plot_cover<-read.csv("data/Alex_raw_data/Spp_abundance_XYs.csv")
 plot_cover<-separate(plot_cover, PLOT, c('x', 'y','PLOT', 'plot2'), remove = T)%>%
   select(-x, -y, -TISSUE)%>%
   mutate(PLOT=if_else(!is.na(plot2), plot2, PLOT))%>%select(-plot2)

@@ -4,8 +4,7 @@ library(tidyr)
 library(ggplot2)
 library(dplyr)
 
-setwd("C:/Users/court/Google Drive/UBC Postdoc/Alex_phenology")
-alex_phen<-read.csv("data/AlexandraFiord_Phenology.csv")#32592 obs
+alex_phen<-read.csv("data/Alex_raw_data/AlexandraFiord_Phenology.csv")#32592 obs
 str(alex_phen)
 
 #check unique entries on metadata
