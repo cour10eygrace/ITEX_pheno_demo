@@ -72,7 +72,8 @@ cols_to_keep=c(#all
               "Q4 growth increment...25"  , "Q4 growth increment...26"  , "Q4 growth increment...27",  
               #vaccinium 
                "P1(obs) snow free",
-               "P2 flower bud visible", "Q1 no. of flowers", "Q2 no. of fruit", "Q3 growth increment (mm)" , "...18", "...19" , 
+               "P2 flower bud visible", "P6 first friut visible",
+               "Q1 no. of flowers", "Q2 no. of fruit", "Q3 growth increment (mm)" , "...18", "...19" , 
               #OTC
                "Q3 growth increment...17",   "Q3 growth increment...18",   "Q3 growth increment...19",
              #betula
