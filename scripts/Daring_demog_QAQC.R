@@ -12,24 +12,34 @@ load('data/DLphen_w_priorvisit.Rdata')
 #check when individuals are marked 'dead' in the Notes and see if this matches with id numbering changes  
 #differentiate between spp where 'a', 'b' is a new individual vs a new branch within same individual 
 
+#rename traits and add measurement replicate info 
+trait_names<-read.csv("data/traits_DL.csv")
+
+phen_dem<-left_join(phen_dem, trait_names)%>%select(-trait)%>%rename(trait=trait_new)%>%relocate(value, .after=trait)
+
+
 #trait/demographic values-> make numeric 
 #deal with weird entries 
 phen_dem$value[phen_dem$value=='twelve']=12
 phen_dem$value[phen_dem$value=='no new growth']=0
 phen_dem$value[phen_dem$value=='none'|phen_dem$value=="n/a"|phen_dem$value=="-"|phen_dem$value=="?"|phen_dem$value=="\\"|
+                 phen_dem$value=="-" |phen_dem$value=="---"|phen_dem$value=="\ "|	phen_dem$value=="n/a" |
                  grepl('day', phen_dem$value)]=NA
-phen_dem$value[phen_dem$year==2017&phen_dem$plant_id=="B3"&phen_dem$species=='ledum'&phen_dem$treatment=="CTL"&
-      phen_dem$trait=="Q2 number of flowers/ stalk...16"]=8
-phen_dem$value[phen_dem$year==2014&phen_dem$plant_id=="BE14"&phen_dem$species=='ledum'&phen_dem$treatment=="OTC"&
-                 phen_dem$trait=="Q2 no. flowers/ stalk...14"]=6
+phen_dem$value[phen_dem$value=='41721']='8' #columns where numbers got saved as dates and weird conversions-ledum B3 CTL 2017 
+phen_dem$value[phen_dem$value=='42925']='5' #columns where numbers got saved as dates and weird conversions-ledum BE14 OTC 2014 
 
-#separate out values 
-phen_dem<- separate(phen_dem, value, into = c("valx","valy", "valz"), sep = " ", remove=F) 
-check<-subset(phen_dem, !is.na(valy))#all doy info-can remove 
+#separate out values when multiple taken and there is a comma, backslash, etc. between and take the first one 
+#separate out values where doy of measurement is recorded in same cell  
+#for saxifraga the date of measurement is first and value  second -for all else date second\
+#very helpful guide on regex https://medium.com/factory-mind/regex-tutorial-a-simple-cheatsheet-by-examples-649dc1c3f285
+
+phen_dem<- separate(phen_dem, value, into = c("valx","valy", "valz"), sep = "(\\s|\\+|\\?|-|,|/)" , remove=F) %>%
+mutate(value=if_else(!is.na(valy)&species=='saxifraga',valy,valx)) 
 
 #make numeric
-phen_dem$value<-as.numeric(phen_dem$valx)
 phen_dem<-select(phen_dem, -valx, -valy,-valz)
+phen_dem$value2<-as.numeric(phen_dem$value) 
+nas<-subset(phen_dem, is.na(value2)&!is.na(value)) #check this is 0
 hist(phen_dem$value)
 
 #outliers? entered wrong?
@@ -41,6 +51,20 @@ phen_dem$value[phen_dem$value==1556]=156
 phen_dem$value[phen_dem$value==935]=94
 phen_dem$value[phen_dem$value==750]=75
 hist(phen_dem$value) #looks good 
+
+#deal with measurement units Issue #2
+#Some years measured in cm some in mm. for leaf/stalk lengths, diameters, growth etc. 
+
+unique(phen_dem$trait)
+#plot 
+ggplot(filter(phen_dem,grepl("growth|mm|length|diam|width", trait)),aes(value))+
+  geom_histogram()+
+  facet_wrap(~trait+ species, scales="free")
+
+ggplot(phen_dem,aes(value))+
+  geom_histogram()+
+  facet_wrap(~trait+ species, scales="free")
+
 
 #deal with plant_ids- Issue #4
 ids<-mutate(phen_dem, plantid= gsub(".*[^0-9]","",plant_id))%>% #take letters off front 
@@ -115,7 +139,7 @@ phen_dem<-filter(phen_dem, year>2000)
 
 #check plant IDs with low counts-
 #double check that years are either at beginning or end of series sequentially
-check<- group_by(phen_dem,species, treatment, plantid)%>%
+checkIDs<- group_by(phen_dem,species, treatment, plantid)%>%
   mutate(count=n_distinct(year))%>%select(species, treatment, plantid, count, year)%>%distinct(.)%>%
   arrange(count, plantid, year)%>%
   group_by(species, treatment, plantid, count) %>%
@@ -123,9 +147,8 @@ check<- group_by(phen_dem,species, treatment, plantid)%>%
   separate(year, into = c('y1', 'y2', 'y3', 'y4', 'y5', 'y6', 'y7', 'y8', 'y9', 'y10', 
                           'y11', 'y12', 'y13', 'y14', 'y15', 'y16', 'y17', 'y18', 'y19', 'y20', 'y21'))
 
-check2<-read.csv('data/plantids.csv') #notes from manually checking all ids 2/22/22
-check<-left_join(check, check2)%>%relocate(Notes, .after=count)
-
+check2<-read.csv('data/plantids_DL.csv') #notes from manually checking all ids 2/22/22
+checkIDs<-left_join(checkIDs, check2)%>%relocate(Notes, .after=count)
 
 #look at dead stuff 
 dead_check<-select(phen_dem, year, plantid,Notes, species, treatment)%>%filter(grepl("dead|died|new plant|New Plant|Dead|Died",Notes))%>%
@@ -155,9 +178,14 @@ dead_check<-select(phen_dem, year, plantid,Notes, species, treatment)%>%filter(g
 #oxytropis 261 died 2014, retagged 261a, not remeasured until 2019 
 
 #for now, let's just remove the unresolved dead ids
-dead_check<-select(dead_check, plantid, species)
+
+dead_check<-select(dead_check, plantid, species)%>%
+    filter(plantid!="1"& plantid!="2"& plantid!="1a"& plantid!="2a"& plantid!="106a"& plantid!="134a"& plantid!="130a"&
+             plantid!="261"& plantid!="261a")
+
 phen_dem<-anti_join(phen_dem, dead_check)
-phen_dem$plantid[phen_dem$plantid=='138'|phen_dem$plantid=='138b'&phen_dem$species=="betula"]=NA
+#remove other years 
+phen_dem$plantid[phen_dem$plantid=='138'|phen_dem$plantid=='138b'|phen_dem$plantid=='142a'&phen_dem$species=="betula"]=NA
 
 #remove plant ids set to NA
 phen_dem<-filter(phen_dem, !is.na(plantid))
@@ -283,21 +311,3 @@ oxy<-arrange(oxy, plant_id, year)
 indiv<-group_by(oxy, plant_id)%>%count()
 
 
-
-  #standardize names
-  #(trait=="mean diametre"|trait=="Mean_diametre"|trait=="mean diameter (mm)")~"mean_diam_mm", 
-  #(trait=="Mean growth increment (mm)"|trait=="mean growth increment(mm)"|trait=="mean_growth increment") ~"mean_growth_inc_mm", 
-  #(trait=="Mean leaf  length (mm)"|trait=="mean_leaf length"|trait=="Q3_mean")~"mean_leaf_length_mm", 
-  #trait=="Q2_longest leaf (mm)"~"longest_leaf_mm",
-  #trait=="Sum green_leaf length"~"sum_green_leaf_length_mm",   
-  #(trait=="Q1 no. of flowering stalks"|trait=="Q1_no. stalks")~"no_flower_stalks", 
-  #trait=="Q1 no. of flowers"~"no_flowers", 
-  #trait=="Q2 no. of fruit"~ "no_fruit", 
-  #trait=="Q1_no. male catkins"~"no_male_catkins", 
-  #trait=="Q2_no. female"~"no_female_catkins", 
-  #trait=="Q1_total no. catkins"~"no_catkins", 
-  #trait=="Q1_total no. catkins"~"no_catkins", 
-  #trait=="Q1a no. of buds"~"no_flower_buds", 
-  #trait=="Q1b no. of pods"~"no_seed_pods", 
-  #trait== "Q2 number of flowers/ stalk" ~"no_flowers_per_stalk", 
-  #trait== "Q3 number of fruit / stalk"~"no_fruit_per_stalk"
