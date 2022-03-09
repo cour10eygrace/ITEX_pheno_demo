@@ -40,10 +40,12 @@ mutate(value=if_else(!is.na(valy)&species=='saxifraga',valy,valx))
 phen_dem<-select(phen_dem, -valx, -valy,-valz)
 phen_dem$value2<-as.numeric(phen_dem$value) 
 nas<-subset(phen_dem, is.na(value2)&!is.na(value)) #check this is 0
-hist(phen_dem$value)
+hist(phen_dem$value2)
+phen_dem$value<-as.numeric(phen_dem$value)
+phen_dem$value2<-NULL
 
 #outliers? entered wrong?
-sort(unique(phen_dem$value), decreasing = T)
+#sort(unique(phen_dem$value), decreasing = T)
 #1556? yes ~156
 #935? yes ~ 94
 #750? yes ~75
@@ -52,21 +54,122 @@ phen_dem$value[phen_dem$value==935]=94
 phen_dem$value[phen_dem$value==750]=75
 hist(phen_dem$value) #looks good 
 
-#deal with measurement units Issue #2
+#deal with measurement units Issue #2----
 #Some years measured in cm some in mm. for leaf/stalk lengths, diameters, growth etc. 
 
 unique(phen_dem$trait)
 #plot 
-ggplot(filter(phen_dem,grepl("growth|mm|length|diam|width", trait)),aes(value))+
-  geom_histogram()+
-  facet_wrap(~trait+ species, scales="free")
+ggplot(filter(phen_dem,grepl("growth|mm|length|diam|width", trait)),aes(y=value, x=year))+
+  #geom_histogram()+
+  geom_point()+
+  facet_wrap(~species + trait + treatment, scales="free")+ theme_classic()+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 
-ggplot(phen_dem,aes(value))+
-  geom_histogram()+
-  facet_wrap(~trait+ species, scales="free")
+#years that are measured in the wrong unit (should be mm but in cm)
+#multiply x 10 
+#betula growth inc 2009, 2010, 2012, 2017, 2020, 2021
+#betula leaf length 2009, 2010, 2012, 2017, 2020, 2021
+#carex stalk length  2011, 2012, 2014, 2015. (id 316 & 319 in 2017) 
+#carex leaf length  2011, 2012, 2014, 2015-yes
+#eriophorum stalk length early 2009, 2010 (CTL only), 2011, 2012 
+#eriophorum stalk length late 2007, 2010 (CTL only), 2011, 2012, 2015
+#eriophorum leaf_length 2011, 2012, 2015
+#ledum growth inc 2008, 2009, 2010, 2012
+#oxytropis width 2008, 2009, 2012
+#oxytropis length 2008, 2009, 2012, 2017
+#salix growth inc 2010
+#salix catkin length 2010, 2017
+#saxifraga diameter 2010, 2011, 2012, 2014, 2017
+#vaccinium growth 2001,2002, 2008, 2010 (OTC only), 2012
+
+fixunits<-group_by(phen_dem,trait, species, treatment, year)%>%summarise(max_val=max(value, na.rm=T))%>%
+#filter(grepl("growth|mm|length|diam|width", trait))%>%group_by(trait, species, treatment)%>%
+mutate(need_fix=case_when(species=="betula"& trait=="growth_inc_mm" & year==2009~"Y",
+                          species=="betula"& trait=="growth_inc_mm" & year==2010~"Y",
+                          species=="betula"& trait=="growth_inc_mm" & year==2012~"Y",
+                          species=="betula"& trait=="growth_inc_mm" & year==2017~"Y",
+                          species=="betula"& trait=="growth_inc_mm" & year==2020~"Y",
+                          species=="betula"& trait=="growth_inc_mm" & year==2021~"Y",
+                          species=="betula"& trait=="leaf_length_mm" & year==2009~"Y",
+                          species=="betula"& trait=="leaf_length_mm" & year==2010~"Y",
+                          species=="betula"& trait=="leaf_length_mm" & year==2012~"Y",
+                          species=="betula"& trait=="leaf_length_mm" & year==2017~"Y",
+                          species=="betula"& trait=="leaf_length_mm" & year==2020~"Y",
+                          species=="betula"& trait=="leaf_length_mm" & year==2021~"Y", 
+                          species=="carex"& trait=="flowering_stalk_length_mm" & year==2011~"Y",
+                          species=="carex"& trait=="flowering_stalk_length_mm" & year==2012~"Y",
+                          species=="carex"& trait=="flowering_stalk_length_mm" & year==2014~"Y",
+                          species=="carex"& trait=="flowering_stalk_length_mm" & year==2015~"Y",
+                          species=="carex"& trait=="leaf_length_mm" & year==2011~"Y",
+                          species=="carex"& trait=="leaf_length_mm" & year==2012~"Y",
+                          species=="carex"& trait=="leaf_length_mm" & year==2014~"Y",
+                          species=="carex"& trait=="leaf_length_mm" & year==2015~"Y",
+                          species=="eriophorum"& trait=="flowering_stalk_length_mm_early" & year==2009~"Y",
+                          species=="eriophorum"& trait=="flowering_stalk_length_mm_early" & year==2010 & treatment=="CTL"~"Y",
+                          species=="eriophorum"& trait=="flowering_stalk_length_mm_early" & year==2011~"Y",
+                          species=="eriophorum"& trait=="flowering_stalk_length_mm_early" & year==2012~"Y",
+                          species=="eriophorum"& trait=="flowering_stalk_length_mm_late" & year==2007~"Y",
+                          species=="eriophorum"& trait=="flowering_stalk_length_mm_late" & year==2010 & treatment=="CTL"~"Y",
+                          species=="eriophorum"& trait=="flowering_stalk_length_mm_late" & year==2011~"Y",
+                          species=="eriophorum"& trait=="flowering_stalk_length_mm_late" & year==2012~"Y",
+                          species=="eriophorum"& trait=="flowering_stalk_length_mm_late" & year==2015~"Y",
+                          species=="eriophorum"& trait=="leaf_length_mm" & year==2011~"Y",
+                          species=="eriophorum"& trait=="leaf_length_mm" & year==2012~"Y",
+                          species=="eriophorum"& trait=="leaf_length_mm" & year==2015~"Y",
+                          species=="ledum"& trait=="growth_inc_mm" & year==2008~"Y",
+                          species=="ledum"& trait=="growth_inc_mm" & year==2009~"Y",
+                          species=="ledum"& trait=="growth_inc_mm" & year==2010~"Y",
+                          species=="ledum"& trait=="growth_inc_mm" & year==2012~"Y",
+                          species=="ledum"& trait=="growth_inc_mm" & year==2008~"Y",
+                          species=="oxytropis"& trait=="width_mm" & year==2008~"Y",
+                          species=="oxytropis"& trait=="width_mm" & year==2009~"Y",
+                          species=="oxytropis"& trait=="width_mm" & year==2012~"Y",
+                          species=="oxytropis"& trait=="length_mm" & year==2008~"Y",
+                          species=="oxytropis"& trait=="length_mm" & year==2009~"Y",
+                          species=="oxytropis"& trait=="length_mm" & year==2012~"Y",
+                          species=="oxytropis"& trait=="length_mm" & year==2017~"Y",
+                          species=="salix"& trait=="growth_inc_mm" & year==2010~"Y",
+                          species=="salix"& trait=="length_mature_female_catkins_mm" & year==2010~"Y",
+                          species=="salix"& trait=="length_mature_female_catkins_mm" & year==2017~"Y",
+                          species=="saxifraga"& trait=="diameter_mm" & year==2010~"Y",
+                          species=="saxifraga"& trait=="diameter_mm" & year==2011~"Y",
+                          species=="saxifraga"& trait=="diameter_mm" & year==2012~"Y",
+                          species=="saxifraga"& trait=="diameter_mm" & year==2014~"Y",
+                          species=="saxifraga"& trait=="diameter_mm" & year==2017~"Y",
+                          species=="vaccinium"& trait=="growth_inc_mm" & year==2001~"Y",
+                          species=="vaccinium"& trait=="growth_inc_mm" & year==2002~"Y",
+                          species=="vaccinium"& trait=="growth_inc_mm" & year==2008~"Y",
+                          species=="vaccinium"& trait=="growth_inc_mm" & year==2010 & treatment=="OTC"~"Y",
+                          species=="vaccinium"& trait=="growth_inc_mm" & year==2012~"Y", TRUE~"N"))%>% select(-max_val)
+
+                          
+                          #also issues with these specific individuals...can't get the case_when to work with these... 
+                          species=="salix"& trait=="longest_leaf_mm" & year==2011& plant_id=='100'~"Y",
+                          species=="salix"& trait=="longest_leaf_mm" & year==2011& plant_id=='101'~"Y",
+                          species=="salix"& trait=="longest_leaf_mm" & year==2011& plant_id=='102'~"Y",              
+ 
+                          species=="carex"&year==2017& trait=="flowering_stalk_length_mm"& plant_id=='316'~"Y", 
+                         plant_id=='319'&species=="carex"&year==2017& trait=="flowering_stalk_length_mm"~"Y", 
+                        plant_id=='1'&species=="eriophorum"&year==2009&trait=="leaf_length_mm"& treatment=="CTL"~"Y",  
+              
+  
+phen_dem<-left_join(phen_dem, fixunits)
+
+phen_dem<-mutate(phen_dem, value=if_else(need_fix=="Y", value*10, value))
 
 
-#deal with plant_ids- Issue #4
+#plot again -log to look for out
+ggplot(filter(phen_dem,grepl("growth|mm|length|diam|width", trait)),aes(y=log(value), x=year))+
+  #geom_histogram()+
+  geom_point()+
+  facet_wrap(~species + trait + treatment, scales="free")+ theme_classic()+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+
+
+
+
+#deal with plant_ids- Issue #4----
 ids<-mutate(phen_dem, plantid= gsub(".*[^0-9]","",plant_id))%>% #take letters off front 
    mutate(plantid=if_else(plantid=="", plant_id, plantid))%>% #keep letters at end 
    mutate(plantid = str_remove(plantid, "^0+"))%>% #remove zeroes from front 
@@ -229,7 +332,7 @@ notes<-select(phen_dem, species, year, plant_id, treatment, Notes)%>%distinct(.)
 phen_demw<-left_join(phen_demw, notes)
 
 #separate by spp 
-#Eriophorum----
+#Eriophorum
 eri<-subset(phen_demw, species=="eriophorum")
 eri<-eri %>% select_if(~sum(!is.na(.)) > 0)  #remove cols with no data
 
@@ -295,7 +398,7 @@ led<-mutate(led, plant_id=as.character(extract_numeric(plant_id)))%>%
 cts<-group_by(led, plant_id, treatment)%>%count()
 
 
-#Oxytropis----
+#Oxytropis
 oxy<-subset(phen_demw, species=="oxytropis")
 oxy<-oxy %>% select_if(~sum(!is.na(.)) > 0)  #remove cols with no data
 
