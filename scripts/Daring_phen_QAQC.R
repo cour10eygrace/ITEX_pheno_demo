@@ -369,6 +369,26 @@ ggplot(phen_dem, aes(DOY, fill=species))+
   geom_histogram(alpha=0.7)+ scale_fill_manual(values=specColor[c(1:5,34:36,38:40)]) +
   facet_wrap(~phen_stage+treatment, scales="free")+ theme_bw()
 
+
+#combine phases that are same across spp 
+phen_dem<-mutate(phen_dem, phen_stage=case_when(
+phen_stage=="first green leaf"|phen_stage=="first leaf bud"|phen_stage=="first new leaves"~"first leaf", 
+phen_stage=="first bud" ~"first flower bud", 
+phen_stage=="first petal drop" ~"first petal shed",
+phen_stage=="last petal drop" ~"last petal shed",
+phen_stage=="seed disp."|phen_stage=="first seed shed" ~"seed shed",
+phen_stage=="first abs. of leaf"~"first leaf shed",
+phen_stage=="yellow leaf"~"first leaf turn", 
+phen_stage=="all shed"~"last leaf shed",
+phen_stage=="first female catkin"~"first catkin female",
+phen_stage=="first male catkin"~"first catkin male" ,
+TRUE~phen_stage))
+
+ggplot(phen_dem, aes(DOY, fill=species))+
+  geom_histogram(alpha=0.7)+ scale_fill_manual(values=specColor[c(1:5,34:36,38:40)]) +
+  facet_wrap(~phen_stage+treatment, scales="free")+ theme_bw()
+
+
 save(phen_dem, file='data/DLphen_w_priorvisit.Rdata')
 #load('data/DLphen_w_priorvisit.Rdata')
 
