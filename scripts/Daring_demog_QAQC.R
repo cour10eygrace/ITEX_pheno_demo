@@ -6,13 +6,14 @@ load('data/DLphen_w_priorvisit.Rdata')
 #ISSUES 
 #need to make sure zeroes are true zeroes not just unmeasured individuals**ISSUE #1 
 #ensure consistent measurement units (cm vs mm across years) **ISSUE #2 
-#traits-calculate means when multiple measurements within an individual ? or keep separate for hierarchical modeling? 
+#traits-calculate means when multiple measurements within an individual ? 
+#or keep separate for hierarchical modeling? depends on the trait/species-double check manual 
 #deal with different measurement names for OTC vs CTL within a species **ISSUE #3
 #deal with plant ids different across years and renaming of new individuals with 'a' **ISSUE #4 
 #check when individuals are marked 'dead' in the Notes and see if this matches with id numbering changes  
 #differentiate between spp where 'a', 'b' is a new individual vs a new branch within same individual 
 
-#rename traits and add measurement replicate info 
+#rename traits and add replicate info #Issue #3---- 
 trait_names<-read.csv("data/traits_DL.csv")
 
 phen_dem<-left_join(phen_dem, trait_names)%>%select(-trait)%>%rename(trait=trait_new)%>%relocate(value, .after=trait)
@@ -104,6 +105,7 @@ mutate(need_fix=case_when(species=="betula"& trait=="growth_inc_mm" & year==2009
                           species=="carex"& trait=="leaf_length_mm" & year==2012~"Y",
                           species=="carex"& trait=="leaf_length_mm" & year==2014~"Y",
                           species=="carex"& trait=="leaf_length_mm" & year==2015~"Y",
+                          species=="eriophorum"& trait=="diameter_mm"~"Y", #these all in cm ~ convert to mm 
                           species=="eriophorum"& trait=="flowering_stalk_length_mm_early" & year==2009~"Y",
                           species=="eriophorum"& trait=="flowering_stalk_length_mm_early" & year==2010 & treatment=="CTL"~"Y",
                           species=="eriophorum"& trait=="flowering_stalk_length_mm_early" & year==2011~"Y",
@@ -142,31 +144,19 @@ mutate(need_fix=case_when(species=="betula"& trait=="growth_inc_mm" & year==2009
                           species=="vaccinium"& trait=="growth_inc_mm" & year==2010 & treatment=="OTC"~"Y",
                           species=="vaccinium"& trait=="growth_inc_mm" & year==2012~"Y", TRUE~"N"))%>% select(-max_val)
 
-                          
-                          #also issues with these specific individuals...can't get the case_when to work with these... 
-                          species=="salix"& trait=="longest_leaf_mm" & year==2011& plant_id=='100'~"Y",
-                          species=="salix"& trait=="longest_leaf_mm" & year==2011& plant_id=='101'~"Y",
-                          species=="salix"& trait=="longest_leaf_mm" & year==2011& plant_id=='102'~"Y",              
- 
-                          species=="carex"&year==2017& trait=="flowering_stalk_length_mm"& plant_id=='316'~"Y", 
-                         plant_id=='319'&species=="carex"&year==2017& trait=="flowering_stalk_length_mm"~"Y", 
-                        plant_id=='1'&species=="eriophorum"&year==2009&trait=="leaf_length_mm"& treatment=="CTL"~"Y",  
               
   
-phen_dem<-left_join(phen_dem, fixunits)
+phen_dem<-left_join(phen_dem, fixunits)%>%
+mutate(need_fix=case_when(
+species=="salix"& trait=="leaf_length_mm" & year==2011& plant_id=='100'~"Y",
+species=="salix"& trait=="leaf_length_mm" & year==2011& plant_id=='101'~"Y",
+species=="salix"& trait=="leaf_length_mm" & year==2011& plant_id=='102'~"Y",              
+plant_id=='319'&species=="carex"&year==2017& trait=="flowering_stalk_length_mm"~"Y", 
+plant_id=='316'&species=="carex"&year==2017& trait=="flowering_stalk_length_mm"~"Y", 
+plant_id=='1'&species=="eriophorum"&year==2009&trait=="leaf_length_mm"& treatment=="CTL"~"Y", TRUE~need_fix))
 
+#if need fix=Y then need to convert from cm to mm so value*10
 phen_dem<-mutate(phen_dem, value=if_else(need_fix=="Y", value*10, value))
-
-
-#plot again -log to look for out
-ggplot(filter(phen_dem,grepl("growth|mm|length|diam|width", trait)),aes(y=log(value), x=year))+
-  #geom_histogram()+
-  geom_point()+
-  facet_wrap(~species + trait + treatment, scales="free")+ theme_classic()+
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
-
-
-
 
 
 #deal with plant_ids- Issue #4----
@@ -272,7 +262,6 @@ dead_check<-select(phen_dem, year, plantid,Notes, species, treatment)%>%filter(g
 #betula #138a marked dead 2011 & 2012, No new tag in 2013
 #betula #132 marked dead 2008, no new tag 2009
 
-
 #correct
 #oxytropis #1, 2 marked dead 2020, changed to 1a, 2a in 2021
 #salix #106 marked dead 2004-changed to 106a 2004
@@ -293,43 +282,55 @@ phen_dem$plantid[phen_dem$plantid=='138'|phen_dem$plantid=='138b'|phen_dem$plant
 #remove plant ids set to NA
 phen_dem<-filter(phen_dem, !is.na(plantid))
 
-#deal with zeroes 
-unique(phen_dem$trait)
 
-#measurement ids within individuals-EG branches
+#deal with zeroes Issue #1----
+#need to throw out all 2020 data too many zeroes and missing data... inconsistent coverage across spp 
+phen_dem<-subset(phen_dem, year!=2020)
 
-
-
-
-
-%>%mutate(value=extract_numeric(valx))
-
-%>%select(-valx)
-
-hist(as.numeric(phen_dem$value))
-
-hist(as.numeric(phen_dem$valx))
-
-#fix more naming
-unique(phen_dem$phen_stage)
-phen_dem<-mutate(phen_dem, phen_stage=str_replace_all(phen_stage, " ", "_"))%>% #fill blanks with underscores 
-  mutate(phen_stage=str_replace(phen_stage, "\\.", ""))
-unique(phen_dem$phen_stage)
-
-
-str(phen_dem)
-
-
-#pull the data back wide 
-phen_demw<-select(phen_dem, species, year, plant_id, treatment, phen_stage, DOY, trait, value)%>%
-  group_by(species, year, plant_id, treatment)%>%
+#pull the data back wide -use averaged DOYs 
+phen_demw<-select(phen_dem, species, year, plantid, treatment, phen_stage, DOY,trait, value,measurement_rep)%>%
+  group_by(species, year, plantid, treatment)%>%
   pivot_wider(names_from = "phen_stage", values_from="DOY")%>%
-  pivot_wider(names_from = "trait", values_from="value")
+  pivot_wider(names_from = c("trait","measurement_rep"), values_from="value")%>%distinct(.)
+
+#remove spaces from names phenology
+names(phen_demw) <- gsub(" ", "_", names(phen_demw))
+
+#Rules by spp for dealing with zeroes 
+#oxytropis 
+#if num buds= 0, num pods =0 
+phen_demw$num_fruit_1[phen_demw$species=="oxytropis"&phen_demw$num_flowers_1==0]=0 
+#if num pods=0 but num flowers > 0, num pods NA -most likely missed this phase
+phen_demw$num_fruit_1[phen_demw$species=="oxytropis"&phen_demw$num_flowers_1>0]=NA_real_
+#if num pods=0 but num flowers NA, num pods?? 
+#if flowering phenology recorded leave as is, if not NA- 
+#really can't estimate fruit if don't know flowering happened 
+phen_demw$num_fruit_1[phen_demw$species=="oxytropis"&is.na(phen_demw$num_flowers_1)&is.na(phen_demw$first_flower_bud)]=NA_real_
+#if num buds= 0, there should be no flowering phenology recorded-fill in w/ NA
+phen_demw$first_flower_bud[phen_demw$species=="oxytropis"&phen_demw$num_flowers_1==0]=NA_real_ 
+phen_demw$first_flower_open[phen_demw$species=="oxytropis"&phen_demw$num_flowers_1==0]=NA_real_ 
+#if num pods= 0, there should be no fruiting phenology recorded-fill in w/ NA
+phen_demw$seed_shed[phen_demw$species=="oxytropis"&phen_demw$num_fruit_1==0]=NA_real_ 
+
+#ledum 
+#if num flowering stalks=0, num flowers/fruit per stalk is NA not 0 
+phen_demw$num_flowers_per_stalk_1[phen_demw$species=="ledum"&phen_demw$num_flowering_stalks_1==0]=NA_real_
+phen_demw$num_fruit_per_stalk_1[phen_demw$species=="ledum"&phen_demw$num_flowering_stalks_1==0]=NA_real_
+#if num flowers per stalk=0, and no flowering phenology, replace with NA 
+#can't estimate # flowers if don't know that flowering happened 
+phen_demw$num_flowers_per_stalk_1[phen_demw$species=="ledum"&is.na(phen_demw$num_flowering_stalks_1)&is.na(phen_demw$first_flower_bud)]=NA_real_
+#if num flowering stalks =0, there should be no flowering/fruiting phenology recorded-fill in w/ NA
+phen_demw$first_flower_bud[phen_demw$species=="ledum"&phen_demw$num_flowering_stalks_1==0]=NA_real_ 
+phen_demw$first_flower_open[phen_demw$species=="ledum"&phen_demw$num_flowering_stalks_1==0]=NA_real_ 
+phen_demw$first_flower_shed[phen_demw$species=="ledum"&phen_demw$num_flowering_stalks_1==0]=NA_real_ 
+phen_demw$last_flower_shed[phen_demw$species=="ledum"&phen_demw$num_flowering_stalks_1==0]=NA_real_ 
+phen_demw$first_fruit_visible[phen_demw$species=="ledum"&phen_demw$num_flowering_stalks_1==0]=NA_real_ 
+#if num of
 
 
-#add back in notes
-notes<-select(phen_dem, species, year, plant_id, treatment, Notes)%>%distinct(.)
+xx<-anti_join(phen_demw, phen_demw2)
 phen_demw<-left_join(phen_demw, notes)
+
 
 #separate by spp 
 #Eriophorum
