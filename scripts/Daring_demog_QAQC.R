@@ -6,12 +6,11 @@ load('data/DLphen_w_priorvisit.Rdata')
 #ISSUES 
 #need to make sure zeroes are true zeroes not just unmeasured individuals**ISSUE #1 
 #ensure consistent measurement units (cm vs mm across years) **ISSUE #2 
-#traits-calculate means when multiple measurements within an individual ? 
-#or keep separate for hierarchical modeling? depends on the trait/species-double check manual 
 #deal with different measurement names for OTC vs CTL within a species **ISSUE #3
 #deal with plant ids different across years and renaming of new individuals with 'a' **ISSUE #4 
 #check when individuals are marked 'dead' in the Notes and see if this matches with id numbering changes  
 #differentiate between spp where 'a', 'b' is a new individual vs a new branch within same individual 
+
 
 #rename traits and add replicate info #Issue #3---- 
 trait_names<-read.csv("data/traits_DL.csv")
@@ -296,122 +295,134 @@ phen_demw<-select(phen_dem, species, year, plantid, treatment, phen_stage, DOY,t
 #remove spaces from names phenology
 names(phen_demw) <- gsub(" ", "_", names(phen_demw))
 
+#reorder cols by measurement
+phen_demw<-select(phen_demw, species,year,plantid,treatment,first_flower_bud,first_flower_open,                 
+first_leaf,first_petal_shed, seed_shed, last_petal_shed, first_flower_shed, first_fruit_visible,               
+last_flower_shed, first_catkin_female, first_leaf_shed,first_leaf_turn,first_catkin_male,first_stigma,                       
+last_leaf_turn,pollen_shed,first_anther,last_leaf_shed, num_flowers_1,num_fruit_1,                       
+length_mm_1, width_mm_1,num_flowering_stalks_1, num_flowers_per_stalk_1, num_flowers_per_stalk_2, 
+num_flowers_per_stalk_3,num_flowers_per_stalk_4, num_fruit_per_stalk_1,num_fruit_per_stalk_2,  
+num_fruit_per_stalk_3, num_fruit_per_stalk_4,growth_inc_mm_1, growth_inc_mm_2, growth_inc_mm_3, 
+num_male_catkins_1, num_female_catkins_1, leaf_length_mm_1, leaf_length_mm_2, leaf_length_mm_3, 
+leaf_length_mm_4,leaf_length_mm_5, leaf_length_mm_6, leaf_length_mm_7,leaf_length_mm_8,
+leaf_length_mm_9, leaf_length_mm_10, num_catkins_1, num_mature_female_catkins_1, 
+length_mature_female_catkins_mm_1, length_mature_female_catkins_mm_2, length_mature_female_catkins_mm_3, 
+length_mature_female_catkins_mm_4, length_mature_female_catkins_mm_5, length_mature_female_catkins_mm_6, 
+length_mature_female_catkins_mm_7, length_mature_female_catkins_mm_8, length_mature_female_catkins_mm_9, 
+length_mature_female_catkins_mm_10, length_mature_female_catkins_mm_11, length_mature_female_catkins_mm_12, 
+length_mature_female_catkins_mm_13, length_mature_female_catkins_mm_14, length_mature_female_catkins_mm_15, 
+flowering_stalk_length_mm_early_1, flowering_stalk_length_mm_early_2, flowering_stalk_length_mm_early_3, 
+flowering_stalk_length_mm_early_4, flowering_stalk_length_mm_early_5, flowering_stalk_length_mm_early_6, 
+flowering_stalk_length_mm_early_7, flowering_stalk_length_mm_early_8, flowering_stalk_length_mm_early_9,
+flowering_stalk_length_mm_early_10, 
+flowering_stalk_length_mm_late_1, flowering_stalk_length_mm_late_2, flowering_stalk_length_mm_late_3, 
+flowering_stalk_length_mm_late_4, flowering_stalk_length_mm_late_5, flowering_stalk_length_mm_late_6, 
+flowering_stalk_length_mm_late_7, flowering_stalk_length_mm_late_8, flowering_stalk_length_mm_late_9,
+flowering_stalk_length_mm_late_10, diameter_mm_1, diameter_mm_2, diameter_mm_3, 
+flowering_stalk_age_class_1, flowering_stalk_length_mm_1)
+
+
 #Rules by spp for dealing with zeroes 
+
 #oxytropis 
-#if num buds= 0, num pods =0 
+#all flowers will become pods?? 
+#currently operating that you can flower but not make pod-checking with Karin
+##if num pods=0 but num flowers >0, num pods???
+#flower buds counted before open
+#if num flowers(buds)= 0, num fruit(pods) =0 
 phen_demw$num_fruit_1[phen_demw$species=="oxytropis"&phen_demw$num_flowers_1==0]=0 
-#if num pods=0 but num flowers > 0, num pods NA -most likely missed this phase
-phen_demw$num_fruit_1[phen_demw$species=="oxytropis"&phen_demw$num_flowers_1>0]=NA_real_
-#if num pods=0 but num flowers NA, num pods?? 
-#if flowering phenology recorded leave as is, if not NA- 
-#really can't estimate fruit if don't know flowering happened 
-phen_demw$num_fruit_1[phen_demw$species=="oxytropis"&is.na(phen_demw$num_flowers_1)&is.na(phen_demw$first_flower_bud)]=NA_real_
-#if num buds= 0, there should be no flowering phenology recorded-fill in w/ NA
+#if num pods=0 but num flowers NA, num pods NA 
+phen_demw$num_fruit_1[phen_demw$species=="oxytropis"&phen_demw$num_fruit_1==0&is.na(phen_demw$num_flowers_1)]=NA_real_ 
+#if num flowers= 0, there should be no flowering phenology recorded-fill in w/ NA
 phen_demw$first_flower_bud[phen_demw$species=="oxytropis"&phen_demw$num_flowers_1==0]=NA_real_ 
 phen_demw$first_flower_open[phen_demw$species=="oxytropis"&phen_demw$num_flowers_1==0]=NA_real_ 
+phen_demw$first_petal_shed[phen_demw$species=="oxytropis"&phen_demw$num_flowers_1==0]=NA_real_ 
+phen_demw$last_petal_shed[phen_demw$species=="oxytropis"&phen_demw$num_flowers_1==0]=NA_real_ 
 #if num pods= 0, there should be no fruiting phenology recorded-fill in w/ NA
 phen_demw$seed_shed[phen_demw$species=="oxytropis"&phen_demw$num_fruit_1==0]=NA_real_ 
+#if width is NA, length is NA 
+phen_demw$length_mm_1[phen_demw$species=="oxytropis"&is.na(phen_demw$width_mm_1)]=NA_real_ 
+
 
 #ledum 
+# not all flowering stalks will flower 
+# not all flowers will produce fruit
+#flowers counted after open
+#can you have zero flowering stalks??? 
 #if num flowering stalks=0, num flowers/fruit per stalk is NA not 0 
 phen_demw$num_flowers_per_stalk_1[phen_demw$species=="ledum"&phen_demw$num_flowering_stalks_1==0]=NA_real_
 phen_demw$num_fruit_per_stalk_1[phen_demw$species=="ledum"&phen_demw$num_flowering_stalks_1==0]=NA_real_
-#if num flowers per stalk=0, and no flowering phenology, replace with NA 
-#can't estimate # flowers if don't know that flowering happened 
-phen_demw$num_flowers_per_stalk_1[phen_demw$species=="ledum"&is.na(phen_demw$num_flowering_stalks_1)&is.na(phen_demw$first_flower_bud)]=NA_real_
+#if num flowering stalks is NA, there should be no flowering/fruiting counts recorded-fill in w/ NA
+phen_demw$num_flowers_per_stalk_1[phen_demw$species=="ledum"&is.na(phen_demw$num_flowering_stalks_1)]=NA_real_
+phen_demw$num_fruit_per_stalk_1[phen_demw$species=="ledum"&is.na(phen_demw$num_flowering_stalks_1)]=NA_real_
+phen_demw$num_fruit_per_stalk_2[phen_demw$species=="ledum"&is.na(phen_demw$num_flowering_stalks_1)]=NA_real_
+phen_demw$num_fruit_per_stalk_3[phen_demw$species=="ledum"&is.na(phen_demw$num_flowering_stalks_1)]=NA_real_
+phen_demw$num_fruit_per_stalk_4[phen_demw$species=="ledum"&is.na(phen_demw$num_flowering_stalks_1)]=NA_real_
+
 #if num flowering stalks =0, there should be no flowering/fruiting phenology recorded-fill in w/ NA
 phen_demw$first_flower_bud[phen_demw$species=="ledum"&phen_demw$num_flowering_stalks_1==0]=NA_real_ 
 phen_demw$first_flower_open[phen_demw$species=="ledum"&phen_demw$num_flowering_stalks_1==0]=NA_real_ 
 phen_demw$first_flower_shed[phen_demw$species=="ledum"&phen_demw$num_flowering_stalks_1==0]=NA_real_ 
 phen_demw$last_flower_shed[phen_demw$species=="ledum"&phen_demw$num_flowering_stalks_1==0]=NA_real_ 
 phen_demw$first_fruit_visible[phen_demw$species=="ledum"&phen_demw$num_flowering_stalks_1==0]=NA_real_ 
-#if num of
 
+#vaccinium
+#can flower but not fruit  
+#flowers counted after open
+#if num fruit=0 but num flowers NA, num fruit NA 
+phen_demw$num_fruit_1[phen_demw$species=="vaccinium"&phen_demw$num_fruit_1==0&is.na(phen_demw$num_flowers_1)]=NA_real_
+#if num flowers =0, there should be no flowering phenology recorded after opening-fill in w/ NA
+#bud phenology ok because counts happen after opening
+phen_demw$first_flower_open[phen_demw$species=="vaccinium"&phen_demw$num_flowers_1==0]=NA_real_ 
+phen_demw$first_flower_shed[phen_demw$species=="vaccinium"&phen_demw$num_flowers_1==0]=NA_real_ 
+phen_demw$last_flower_shed[phen_demw$species=="vaccinium"&phen_demw$num_flowers_1==0]=NA_real_ 
+#if num fruit =0, there should be no fruiting phenology recorded-fill in w/ NA
+phen_demw$first_fruit_visible[phen_demw$species=="ledum"&phen_demw$num_fruit_1==0]=NA_real_ 
 
-xx<-anti_join(phen_demw, phen_demw2)
-phen_demw<-left_join(phen_demw, notes)
+#betula 
+#constrain growth to be >0 
+phen_demw$growth_inc_mm_1[phen_demw$species=="betula"&phen_demw$growth_inc_mm_1==0]=NA_real_ 
+phen_demw$growth_inc_mm_2[phen_demw$species=="betula"&phen_demw$growth_inc_mm_2==0]=NA_real_ 
+phen_demw$growth_inc_mm_3[phen_demw$species=="betula"&phen_demw$growth_inc_mm_3==0]=NA_real_ 
+#if num catkins=0, catkin phenology should not be recorded-fill in with NA 
+phen_demw$first_catkin_male[phen_demw$species=="betula"&phen_demw$num_male_catkins_1==0]=NA_real_ 
+phen_demw$first_catkin_female[phen_demw$species=="betula"&phen_demw$num_female_catkins_1==0]=NA_real_ 
 
+#salix 
+#constrain growth to be >0 
+phen_demw$growth_inc_mm_1[phen_demw$species=="salix"&phen_demw$growth_inc_mm_1==0]=NA_real_ 
+phen_demw$growth_inc_mm_2[phen_demw$species=="salix"&phen_demw$growth_inc_mm_2==0]=NA_real_ 
+phen_demw$growth_inc_mm_3[phen_demw$species=="salix"&phen_demw$growth_inc_mm_3==0]=NA_real_ 
+#check that nunm female catkins not > num total, if so replace
+phen_demw$num_catkins_1[phen_demw$species=="salix"&phen_demw$plantid=='106a'&phen_demw$year==2009]=2 
+phen_demw$num_catkins_1[phen_demw$species=="salix"&phen_demw$plantid=='109a'&phen_demw$year==2009]=7
+#if total # catkins=0, num mature catkins=0 
+phen_demw$num_mature_female_catkins_1[phen_demw$species=="salix"&phen_demw$num_catkins_1==0]=0
+#constrain length to be >0 
+phen_demw$length_mature_female_catkins_mm_1[phen_demw$species=="salix"&phen_demw$length_mature_female_catkins_mm_1==0]=NA_real_ 
+phen_demw$length_mature_female_catkins_mm_2[phen_demw$species=="salix"&phen_demw$length_mature_female_catkins_mm_2==0]=NA_real_ 
+#if num catkins=0 no catkin phenology should be recorded  
+phen_demw$pollen_shed[phen_demw$species=="salix"&phen_demw$num_catkins_1==0]=NA_real_ 
+phen_demw$first_stigma[phen_demw$species=="salix"&phen_demw$num_catkins_1==0]=NA_real_ 
 
-#separate by spp 
-#Eriophorum
-eri<-subset(phen_demw, species=="eriophorum")
-eri<-eri %>% select_if(~sum(!is.na(.)) > 0)  #remove cols with no data
+#saxifraga
+#if num flower stalks =0, there should be no flowering phenology recorded- fill in w NA 
+phen_demw$first_flower_bud[phen_demw$species=="saxifraga"&phen_demw$num_flowering_stalks_1==0]=NA_real_ 
+phen_demw$first_flower_open[phen_demw$species=="saxifraga"&phen_demw$num_flowering_stalks_1==0]=NA_real_ 
+phen_demw$first_petal_shed[phen_demw$species=="saxifraga"&phen_demw$num_flowering_stalks_1==0]=NA_real_ 
+phen_demw$last_petal_shed[phen_demw$species=="saxifraga"&phen_demw$num_flowering_stalks_1==0]=NA_real_ 
 
-#fix issues with inconsistent naming 
-unique(eri$plant_id)
-#E/EE and numbers 1-15 are the same 
-#E is CTL, EE is OTC
-eri<-mutate(eri, plant_id=as.character(extract_numeric(plant_id)))%>%
-  mutate(plant_id=if_else(plant_id=="3"& year>2000& treatment=="CTL","3a", plant_id))#3a gets renamed in 2001 
+#eriophorum 
+#diameter must be >0 
+phen_demw$diameter_mm_1[phen_demw$species=="eriophorum"&phen_demw$diameter_mm_1==0]=NA_real_ 
+#if num stalks =0, length of stalks= NA
+phen_demw$flowering_stalk_length_mm_early_1[phen_demw$species=="eriophorum"&phen_demw$num_flowering_stalks_1==0]=NA_real_ 
+phen_demw$flowering_stalk_length_mm_late_1[phen_demw$species=="eriophorum"&phen_demw$num_flowering_stalks_1==0]=NA_real_ 
+#if num stalks =0, no flowering phen
+phen_demw$first_flower_bud[phen_demw$species=="eriophorum"&phen_demw$num_flowering_stalks_1==0]=NA_real_ 
+phen_demw$seed_shed[phen_demw$species=="eriophorum"&phen_demw$num_flowering_stalks_1==0]=NA_real_ 
 
-unique(eri$plant_id)
+#carex-no zeroes 
+#inflorescence age class, length and phenology all independent 
 
-#see how individuals are tracked through time 
-eri<-arrange(eri, plant_id, treatment, year)
-cts<-group_by(eri, plant_id, treatment)%>%count()
-
-#check all cols
-str(eri)
-names(eri)
-names(eri)<-str_replace_all(names(eri)," ", "_")
-
-#rename demog cols
-eriOTC<-filter(eri, treatment=="OTC")
-eri<-anti_join(eri, eriOTC)%>%select(-mean_leaf_length)
-eriOTC<-select(eriOTC, -Q3_mean)%>%rename(Q3_mean=mean_leaf_length)
-eri<-rbind(eri, eriOTC)
-rm(eriOTC)
-names(eri)
-
-eri<-rename(eri, no_flower_stalks=Q1_no._stalks, mean_diam_mm=Mean_diametre, mean_leaf_length_mm=Q3_mean, 
-            early_shaft_length_mm=mean_shaft_length,late_shaft_length_mm=Mean_shaft_length)
-names(eri)
-
-#calculate growth
-grow<-select(eri, year, plant_id, treatment,mean_diam_mm)%>%group_by(plant_id, treatment)%>%arrange(year)%>%
-  mutate(mean_diam_mm1=lead(mean_diam_mm, 1))%>%mutate(growth_mm=lag(mean_diam_mm1-mean_diam_mm))
-eri<-left_join(eri, grow)%>%relocate(Notes, .after=last_col())
-
-
-#Ledum----
-led<-subset(phen_demw, species=="ledum")
-led<-led %>% select_if(~sum(!is.na(.)) > 0)  #remove cols with no data
-
-#check all cols
-str(led)
-names(led)
-names(led)<-str_replace_all(names(led)," ", "_")
-names(led)<-str_replace_all(names(led),"/", "")
-
-#rename demog cols
-eriOTC<-filter(eri, treatment=="OTC")
-eri<-anti_join(eri, eriOTC)%>%select(-mean_leaf_length)
-eriOTC<-select(eriOTC, -Q3_mean)%>%rename(Q3_mean=mean_leaf_length)
-eri<-rbind(eri, eriOTC)
-rm(eriOTC)
-names(eri)
-
-
-#pull out numbers only 
-unique(led$plant_id).
-led<-mutate(led, plant_id=as.character(extract_numeric(plant_id)))%>%
-  arrange(led, plant_id, treatment, year)
-cts<-group_by(led, plant_id, treatment)%>%count()
-
-
-#Oxytropis
-oxy<-subset(phen_demw, species=="oxytropis")
-oxy<-oxy %>% select_if(~sum(!is.na(.)) > 0)  #remove cols with no data
-
-#fix issues with inconsistent naming 
-unique(oxy$plant_id)
-
-
-#now just pull out numbers from all 
-oxy<-mutate(oxy, plant_id=as.character(extract_numeric(plant_id))%>%mutate(plant_id=as.character(plant_id))
-
-#see how individuals are tracked through time 
-oxy<-arrange(oxy, plant_id, year)
-indiv<-group_by(oxy, plant_id)%>%count()
-
-
+save(phen_demw, file='data/DLphen_w_demog_all.Rdata')
