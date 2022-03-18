@@ -283,8 +283,9 @@ phen_dem<-filter(phen_dem, !is.na(plantid))
 
 
 #deal with zeroes Issue #1----
-#need to throw out all 2020 data too many zeroes and missing data... inconsistent coverage across spp 
-phen_dem<-subset(phen_dem, year!=2020)
+
+#throw out all 2020 data? too many zeroes and missing data... inconsistent coverage across spp 
+#phen_dem<-subset(phen_dem, year!=2020)
 
 #pull the data back wide -use averaged DOYs 
 phen_demw<-select(phen_dem, species, year, plantid, treatment, phen_stage, DOY,trait, value,measurement_rep)%>%
@@ -323,70 +324,60 @@ flowering_stalk_age_class_1, flowering_stalk_length_mm_1)
 
 
 #Rules by spp for dealing with zeroes 
+#From Karin Clark 3/16/22
+#I would expect that the phenological observation is likely correct but that the observer didn't 
+#record the number of buds/flowers.  I think the manual emphasize the phenological monitoring and
+#often the quantitative measurements get missed.
 
 #oxytropis 
-#all flowers will become pods?? 
-#currently operating that you can flower but not make pod-checking with Karin
-##if num pods=0 but num flowers >0, num pods???
-#flower buds counted before open
-#if num flowers(buds)= 0, num fruit(pods) =0 
+#Not all flowers will become pods bc lots of herbivory 
+#Bud phenology recorded before counts so can have 0 buds but first flower bud recorded on same plant 
+#replace zeroes that were most likely just unobserved or eaten individuals not actual zeroes 
+#if num flowers(buds)= 0 and flowering phenology recorded, num flowers=0, otherwise NA 
+phen_demw<-mutate(phen_demw, num_flowers_1=
+                     case_when(species=="oxytropis"&num_flowers_1==0&!is.na(first_flower_bud)~0,
+                                species=="oxytropis"&num_flowers_1==0&is.na(first_flower_bud)~NA_real_, 
+                                TRUE~num_flowers_1))
+#if num flowers(buds)= 0 (checked), num fruit=0
 phen_demw$num_fruit_1[phen_demw$species=="oxytropis"&phen_demw$num_flowers_1==0]=0 
-#if num pods=0 but num flowers NA, num pods NA 
-phen_demw$num_fruit_1[phen_demw$species=="oxytropis"&phen_demw$num_fruit_1==0&is.na(phen_demw$num_flowers_1)]=NA_real_ 
-#if num flowers= 0, there should be no flowering phenology recorded-fill in w/ NA
-phen_demw$first_flower_bud[phen_demw$species=="oxytropis"&phen_demw$num_flowers_1==0]=NA_real_ 
-phen_demw$first_flower_open[phen_demw$species=="oxytropis"&phen_demw$num_flowers_1==0]=NA_real_ 
-phen_demw$first_petal_shed[phen_demw$species=="oxytropis"&phen_demw$num_flowers_1==0]=NA_real_ 
-phen_demw$last_petal_shed[phen_demw$species=="oxytropis"&phen_demw$num_flowers_1==0]=NA_real_ 
-#if num pods= 0, there should be no fruiting phenology recorded-fill in w/ NA
-phen_demw$seed_shed[phen_demw$species=="oxytropis"&phen_demw$num_fruit_1==0]=NA_real_ 
 #if width is NA, length is NA 
 phen_demw$length_mm_1[phen_demw$species=="oxytropis"&is.na(phen_demw$width_mm_1)]=NA_real_ 
+#if num fruit(pods)=0 but num flowers and phenology NA, num pods NA 
+phen_demw$num_fruit_1[phen_demw$species=="oxytropis"&phen_demw$num_fruit_1==0&is.na(phen_demw$num_flowers_1)&is.na(phen_demw$first_flower_bud)]=NA_real_ 
 
 
 #ledum 
 # not all flowering stalks will flower 
 # not all flowers will produce fruit
 #flowers counted after open
-#can you have zero flowering stalks??? 
-#if num flowering stalks=0, num flowers/fruit per stalk is NA not 0 
+#can you have zero flowering stalks- Karin says no, throw them out 
+#if num flowering stalks=0,NA fill rest with NA 
 phen_demw$num_flowers_per_stalk_1[phen_demw$species=="ledum"&phen_demw$num_flowering_stalks_1==0]=NA_real_
 phen_demw$num_fruit_per_stalk_1[phen_demw$species=="ledum"&phen_demw$num_flowering_stalks_1==0]=NA_real_
-#if num flowering stalks is NA, there should be no flowering/fruiting counts recorded-fill in w/ NA
+phen_demw$num_flowering_stalks_1[phen_demw$species=="ledum"&phen_demw$num_flowering_stalks_1==0]=NA_real_
 phen_demw$num_flowers_per_stalk_1[phen_demw$species=="ledum"&is.na(phen_demw$num_flowering_stalks_1)]=NA_real_
 phen_demw$num_fruit_per_stalk_1[phen_demw$species=="ledum"&is.na(phen_demw$num_flowering_stalks_1)]=NA_real_
-phen_demw$num_fruit_per_stalk_2[phen_demw$species=="ledum"&is.na(phen_demw$num_flowering_stalks_1)]=NA_real_
-phen_demw$num_fruit_per_stalk_3[phen_demw$species=="ledum"&is.na(phen_demw$num_flowering_stalks_1)]=NA_real_
-phen_demw$num_fruit_per_stalk_4[phen_demw$species=="ledum"&is.na(phen_demw$num_flowering_stalks_1)]=NA_real_
 
-#if num flowering stalks =0, there should be no flowering/fruiting phenology recorded-fill in w/ NA
-phen_demw$first_flower_bud[phen_demw$species=="ledum"&phen_demw$num_flowering_stalks_1==0]=NA_real_ 
-phen_demw$first_flower_open[phen_demw$species=="ledum"&phen_demw$num_flowering_stalks_1==0]=NA_real_ 
-phen_demw$first_flower_shed[phen_demw$species=="ledum"&phen_demw$num_flowering_stalks_1==0]=NA_real_ 
-phen_demw$last_flower_shed[phen_demw$species=="ledum"&phen_demw$num_flowering_stalks_1==0]=NA_real_ 
-phen_demw$first_fruit_visible[phen_demw$species=="ledum"&phen_demw$num_flowering_stalks_1==0]=NA_real_ 
+#remove 2020-no data
+phen_demw<-unite(phen_demw, speciesyr, species, year, remove=F)%>%filter(speciesyr!="ledum_2020")%>%
+  select(-speciesyr)
 
 #vaccinium
 #can flower but not fruit  
 #flowers counted after open
-#if num fruit=0 but num flowers NA, num fruit NA 
-phen_demw$num_fruit_1[phen_demw$species=="vaccinium"&phen_demw$num_fruit_1==0&is.na(phen_demw$num_flowers_1)]=NA_real_
-#if num flowers =0, there should be no flowering phenology recorded after opening-fill in w/ NA
-#bud phenology ok because counts happen after opening
-phen_demw$first_flower_open[phen_demw$species=="vaccinium"&phen_demw$num_flowers_1==0]=NA_real_ 
-phen_demw$first_flower_shed[phen_demw$species=="vaccinium"&phen_demw$num_flowers_1==0]=NA_real_ 
-phen_demw$last_flower_shed[phen_demw$species=="vaccinium"&phen_demw$num_flowers_1==0]=NA_real_ 
-#if num fruit =0, there should be no fruiting phenology recorded-fill in w/ NA
-phen_demw$first_fruit_visible[phen_demw$species=="ledum"&phen_demw$num_fruit_1==0]=NA_real_ 
+#2020 missed
+phen_demw$num_flowers_1[phen_demw$species=="vaccinium"&phen_demw$year==2020]=NA_real_ 
+
 
 #betula 
 #constrain growth to be >0 
 phen_demw$growth_inc_mm_1[phen_demw$species=="betula"&phen_demw$growth_inc_mm_1==0]=NA_real_ 
 phen_demw$growth_inc_mm_2[phen_demw$species=="betula"&phen_demw$growth_inc_mm_2==0]=NA_real_ 
 phen_demw$growth_inc_mm_3[phen_demw$species=="betula"&phen_demw$growth_inc_mm_3==0]=NA_real_ 
-#if num catkins=0, catkin phenology should not be recorded-fill in with NA 
-phen_demw$first_catkin_male[phen_demw$species=="betula"&phen_demw$num_male_catkins_1==0]=NA_real_ 
-phen_demw$first_catkin_female[phen_demw$species=="betula"&phen_demw$num_female_catkins_1==0]=NA_real_ 
+#num male catkins in 2018 all 0?? 
+phen_demw$num_male_catkins_1[phen_demw$species=="betula"&phen_demw$year==2018]=NA_real_ 
+#num female catkins in 2020 all 0?? 
+phen_demw$num_female_catkins_1[phen_demw$species=="betula"&phen_demw$year==2020]=NA_real_ 
 
 #salix 
 #constrain growth to be >0 
@@ -401,28 +392,20 @@ phen_demw$num_mature_female_catkins_1[phen_demw$species=="salix"&phen_demw$num_c
 #constrain length to be >0 
 phen_demw$length_mature_female_catkins_mm_1[phen_demw$species=="salix"&phen_demw$length_mature_female_catkins_mm_1==0]=NA_real_ 
 phen_demw$length_mature_female_catkins_mm_2[phen_demw$species=="salix"&phen_demw$length_mature_female_catkins_mm_2==0]=NA_real_ 
-#if num catkins=0 no catkin phenology should be recorded  
-phen_demw$pollen_shed[phen_demw$species=="salix"&phen_demw$num_catkins_1==0]=NA_real_ 
-phen_demw$first_stigma[phen_demw$species=="salix"&phen_demw$num_catkins_1==0]=NA_real_ 
 
 #saxifraga
-#if num flower stalks =0, there should be no flowering phenology recorded- fill in w NA 
-phen_demw$first_flower_bud[phen_demw$species=="saxifraga"&phen_demw$num_flowering_stalks_1==0]=NA_real_ 
-phen_demw$first_flower_open[phen_demw$species=="saxifraga"&phen_demw$num_flowering_stalks_1==0]=NA_real_ 
-phen_demw$first_petal_shed[phen_demw$species=="saxifraga"&phen_demw$num_flowering_stalks_1==0]=NA_real_ 
-phen_demw$last_petal_shed[phen_demw$species=="saxifraga"&phen_demw$num_flowering_stalks_1==0]=NA_real_ 
+#constrain diameter to be >0 
+phen_demw$diameter_mm_3[phen_demw$species=="saxifraga"&phen_demw$diameter_mm_3==0]=NA_real_ 
 
 #eriophorum 
 #diameter must be >0 
 phen_demw$diameter_mm_1[phen_demw$species=="eriophorum"&phen_demw$diameter_mm_1==0]=NA_real_ 
-#if num stalks =0, length of stalks= NA
-phen_demw$flowering_stalk_length_mm_early_1[phen_demw$species=="eriophorum"&phen_demw$num_flowering_stalks_1==0]=NA_real_ 
-phen_demw$flowering_stalk_length_mm_late_1[phen_demw$species=="eriophorum"&phen_demw$num_flowering_stalks_1==0]=NA_real_ 
-#if num stalks =0, no flowering phen
-phen_demw$first_flower_bud[phen_demw$species=="eriophorum"&phen_demw$num_flowering_stalks_1==0]=NA_real_ 
-phen_demw$seed_shed[phen_demw$species=="eriophorum"&phen_demw$num_flowering_stalks_1==0]=NA_real_ 
+# length of stalks > NA
+phen_demw$flowering_stalk_length_mm_early_1[phen_demw$species=="eriophorum"&phen_demw$flowering_stalk_length_mm_early_1==0]=NA_real_ 
+phen_demw$flowering_stalk_length_mm_late_1[phen_demw$species=="eriophorum"&phen_demw$flowering_stalk_length_mm_late_1==0]=NA_real_ 
 
 #carex-no zeroes 
-#inflorescence age class, length and phenology all independent 
+#leaf length > 0
+phen_demw$leaf_length_mm_3[phen_demw$species=="carex"&phen_demw$leaf_length_mm_3==0]=NA_real_ 
 
 save(phen_demw, file='data/DLphen_w_demog_all.Rdata')
