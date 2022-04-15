@@ -409,3 +409,4 @@ phen_demw$flowering_stalk_length_mm_late_1[phen_demw$species=="eriophorum"&phen_
 phen_demw$leaf_length_mm_3[phen_demw$species=="carex"&phen_demw$leaf_length_mm_3==0]=NA_real_ 
 
 save(phen_demw, file='data/DLphen_w_demog_all.Rdata')
+#load(file='data/DLphen_w_demog_all.Rdata')
