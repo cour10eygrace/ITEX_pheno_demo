@@ -6,6 +6,7 @@ library(dplyr)
 
 alex_phen<-read.csv("data/Alex_raw_data/AlexandraFiord_Phenology.csv")#32592 obs
 str(alex_phen)
+alex_phenross<-read.csv("data/Alex_raw_data/compiled_phenology.csv")#Ross compiled 
 
 #check unique entries on metadata
 unique(alex_phen$Site)#"Site" for some ??
@@ -36,9 +37,9 @@ alex_phen_long<-pivot_longer(alex_phen, cols = all_of(phen_colsx),
   filter(!is.na(doy))
 
 #plot all 
-ggplot(alex_phen_long, aes(doy))+
-  geom_histogram()+
-  facet_wrap(~phen, scales="free")
+#ggplot(alex_phen_long, aes(doy))+
+#  geom_histogram()+
+#  facet_wrap(~phen, scales="free")
 
 #Remove outliers
 sort(unique(phen_cols$Cap_ripe_first))# 46 -remove 
@@ -58,9 +59,9 @@ alex_phen_long<-pivot_longer(alex_phen, cols = all_of(phen_colsx),
   filter(!is.na(doy))
 
 #plot again
-ggplot(alex_phen_long, aes(doy))+
-  geom_histogram()+
-  facet_wrap(~phen, scales="free")
+#ggplot(alex_phen_long, aes(doy))+
+#  geom_histogram()+
+#  facet_wrap(~phen, scales="free")
 
 #how many observations for each measurement x spp x year? 
 #alex_phen_long_cts<-filter(alex_phen_long, !is.na(doy))%>%group_by(phen)%>%dplyr::summarise(ct=n())
@@ -78,28 +79,34 @@ specColor <- c(
   "#8A7C64", "#599861")
 
 #plot 
-ggplot(alex_phen_long, aes(doy, fill=Species))+
-  geom_histogram(alpha=0.7)+ scale_fill_manual(values=specColor[c(1:5,34:36,38:40)]) +
-  facet_wrap(~phen, scales="free")+ theme_bw()
+#ggplot(alex_phen_long, aes(doy, fill=Species))+
+#  geom_histogram(alpha=0.7)+ scale_fill_manual(values=specColor[c(1:5,34:36,38:40)]) +
+#  facet_wrap(~phen, scales="free")+ theme_bw()
 
 #update inconsistent naming
 #naming could be inconsistent in same species across years &/or same species across sites  
 alex_phen_long2<-mutate(alex_phen_long, phen2=case_when(phen=="Aborted_seed_disp"~"Abort", 
                                                         phen=="Cap_deh"~"Cap_open_first", 
-                                                        phen=="Cap_mat_first"& Species=="SaxOpp"~"Cap_ripe_first",
-                                                        phen=="Cap_twist"~"Cap_first",
-                                                        phen=="Frt_deh"~"Frt_mat_first",
+                                                        phen=="Cap_twist"~"Cap_mat_first",
+                                                        phen=="Frt_deh"~"Seed_disp",
                                                         phen=="Leaf_eaten"& Species=="Salix"~"Herb",
                                                         phen=="Leaf_mat_sen"~"Leaf_mat",
                                                         phen=="Pd_elong"& Species=="SaxOpp"~"Petal_fall_first",
-                                                        phen=="Seed_disp_cap_mat"~"Seed_set_first",
-                                                        phen=="Seed_fall"& Species=="Luzula"~"Seed_set_first",
-                                                        phen=="Seed_imm_cap_cap_twist_fem_swell"~"Seed_set_first",
+                                                        phen=="Seed_disp_cap_mat"~"Seed_disp",
+                                                        phen=="Seed_fall"& Species=="Luzula"~"Seed_disp",
+                                                        phen=="Seed_imm_cap_cap_twist_fem_swell"~"Seed_disp",
                                                         phen=="Sen_first"~"Leaf_sen", 
                                                         phen=="Slv"~"Leaf_sen", 
                                                         phen=="Flower_exp"~"Flower_bbk_first",
-                                                        phen=="Leaf_bud"~"Leaf_bbk",
+                                                        phen=="Veg_bbk"~"Leaf_new",
+                                                        phen=="Leaf_bud"~"Leaf_new",
+                                                        phen=="Green_leaf"~"Leaf_new",
+                                                        phen=="Shoot_bbk"~"Leaf_new",
+                                                        phen=="Elong_first"~"Flower_elong_first",
+                                                        phen=="Flower_open_first"& Species=="SaxOpp"~"Flower_mat_first",
+                                                        phen=="Petal_sen_first"~"Flower_sen_first", 
                                                         phen=="Leaf_bbk"&Year==2001&Species=="Arctagrostis"~"Leaf_sen",
+                                                        phen=="Leaf_bbk"&Year!=2001&Species=="Arctagrostis"~"Leaf_new",
                                                         TRUE~ phen))
 
 
@@ -109,8 +116,10 @@ alex_phen_long2<-subset(alex_phen_long2,
                         &phen!="Leaf_mat_border_line"&phen!="Leaf_mat_old"&phen!="Pd_brkn"&phen!="Rosets_alive"&phen!="Unfertilized"
                         &phen!="Unisex_senescence"&phen!="Percent_green" &phen!="Leaf_eaten")%>%distinct(.)
 
+
 ##keep track of renamed 
-alex_phen_long2<- mutate(alex_phen_long2,renamed=if_else(phen2!=phen, 'Y', 'N'))%>%mutate(phen=phen2)%>%select(-phen2)
+alex_phen_long2<- mutate(alex_phen_long2,
+                         renamed=if_else(phen2!=phen, 'Y', 'N'))%>%mutate(phen=phen2)%>%select(-phen2)
 
 #plot cleaned 
 ggplot(alex_phen_long2, aes(doy, fill=Species))+
@@ -134,6 +143,11 @@ alex_phen_long3<-group_by(alex_phen_long3,all)%>%mutate(doy2=round(mean(doy, na.
 alex_phen_long4<- mutate(alex_phen_long3, doy=doy2)%>%distinct(.)%>%mutate(doy=if_else(diff<4, doy, NA_real_))%>%
   select(-doy2, -diff, -renamed, -n)%>%
   distinct(.) 
+
+#plot
+#ggplot(alex_phen_long4, aes(doy, fill=Species))+
+#  geom_histogram(alpha=0.7)+ scale_fill_manual(values=specColor[c(1:5,34:36,38:40)]) +
+#  facet_wrap(~phen, scales="free")+ theme_bw()
 
 #spread back wide
 alex_phen_long4$all<-NULL
@@ -159,9 +173,9 @@ alex_num_long<-pivot_longer(alex_phen, cols = all_of(num_colsx),
   filter(!is.na(value))
 
 #plot all 
-ggplot(alex_num_long, aes(value))+
-  geom_histogram()+
-  facet_wrap(~counts, scales="free")
+#ggplot(alex_num_long, aes(value))+
+#  geom_histogram()+
+#  facet_wrap(~counts, scales="free")
 
 #outliers
 sort(unique(num_cols$Newgrowth))# 575?? possible? next highest is 37
@@ -178,18 +192,18 @@ alex_num_long<-pivot_longer(alex_phen, cols = all_of(num_colsx),
   filter(!is.na(value))
 
 #plot again 
-ggplot(alex_num_long, aes(value))+
-  geom_histogram()+
-  facet_wrap(~counts, scales="free")
+#ggplot(alex_num_long, aes(value))+
+#  geom_histogram()+
+ # facet_wrap(~counts, scales="free")
 
 #how many observations for each measurement x spp x year? 
 alex_num_long_cts<-filter(alex_num_long, !is.na(value))%>%group_by(counts, Year, Species)%>%
   dplyr::summarise(ct=n())
 
 #plot by species
-ggplot(alex_num_long, aes(value,fill=Species))+
-  geom_histogram(alpha=0.7)+ scale_fill_manual(values=specColor[c(1:5,34:36,38:40)]) +
-  facet_wrap(~counts, scales="free")+ theme_bw()
+#ggplot(alex_num_long, aes(value,fill=Species))+
+#  geom_histogram(alpha=0.7)+ scale_fill_manual(values=specColor[c(1:5,34:36,38:40)]) +
+ # facet_wrap(~counts, scales="free")+ theme_bw()
 
 #update inconsistent naming
 #naming could be inconsistent in same species across years &/or same species across sites  
@@ -247,7 +261,7 @@ alex_num_long4<- mutate(alex_num_long3, value=value2)%>%distinct(.)%>%#mutate(do
   select(-value2, -diff, -renamed, -n)%>%
   distinct(.)
 
-#spread back wide
+  #spread back wide
 alex_num_long4$all<-NULL
 alex_num2<-pivot_wider(alex_num_long4, names_from = "counts", values_from = "value")
 
@@ -256,3 +270,5 @@ alex_num2<-pivot_wider(alex_num_long4, names_from = "counts", values_from = "val
 alex_phen_all<-left_join(alex_phen2, alex_num2)
 names(alex_phen_all)
 save(alex_phen_all, file='data/alex_cleaned_phen.Rdata')
+
+
