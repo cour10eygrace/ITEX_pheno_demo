@@ -4,69 +4,62 @@ library(tidyr)
 library(ggplot2)
 library(dplyr)
 
-alex_phen<-read.csv("data/Alex_raw_data/AlexandraFiord_Phenology.csv")#32592 obs
-str(alex_phen)
-alex_phenross<-read.csv("data/Alex_raw_data/compiled_phenology.csv")#Ross compiled 
+alex_phen<-read.csv("data/Alex_raw_data/compiled_phenology.csv")#Ross compiled 
+names(alex_phen)
 
 #check unique entries on metadata
-unique(alex_phen$Site)#"Site" for some ??
-unique(alex_phen$Species)#looks good
-unique(alex_phen$Year)#looks good
-unique(alex_phen$Plot)#looks good
-unique(alex_phen$Otctreatment)#210?? blanks??
-unique(alex_phen$Snowtreatment)#blanks-should be control??
-unique(alex_phen$Ferttreatment)#blanks-should be control??
+unique(alex_phen$site)#Site? 
+unique(alex_phen$species)#looks good
+unique(alex_phen$year)#looks good
+unique(alex_phen$plot)#need to remove D and G 
+unique(alex_phen$otc_treatment)#210?? blanks??
+unique(alex_phen$snow_treatment)#blanks-should be control??
+unique(alex_phen$fert_treatment)#blanks-should be control??
 
 #filter out obs missing treatment info from above ~1000 obs 
-alex_phen<-subset(alex_phen, Site!="Site"& Otctreatment!=210 & Otctreatment!="")%>% 
-  distinct(.)#31536 obs 
+alex_phen<-subset(alex_phen,site!="Site"& otc_treatment!=210 & otc_treatment!="")%>% 
+  distinct(.)#31534 obs 
 
 #PHENOLOGY----
 #remove columns that are not phenology data
 phen_cols<-alex_phen%>% select_if(funs(is.numeric(.)))
-names(phen_cols)                             
-phen_cols<-dplyr::select(phen_cols, -Plot, -Replicate, -Flowers_per_plot, -Totals_day, -Year)%>%
-  dplyr::select(-contains(c("_no", "length" ,"height", "growth", "max", "Axis", "Agi", "Fpc", "measurement", "Retag", 
-    "last" )))#remove "last' phases because only in early years-re Greg 
+phen_cols<-dplyr::select(phen_cols, contains("pheno_" )) 
 phen_colsx<-names(phen_cols)
 
 #pivot long for plotting 
 alex_phen_long<-pivot_longer(alex_phen, cols = all_of(phen_colsx), 
                              names_to = "phen", values_to = "doy")%>%
-  select(Site, Species, Year, Plot, Plant, Otctreatment, Snowtreatment, Ferttreatment, Replicate,phen, doy)%>%
+  select(site, species, year, plot, plant_id, otc_treatment, snow_treatment,
+         fert_treatment, na_replicate,phen, doy)%>%
   filter(!is.na(doy))
 
 #plot all 
-#ggplot(alex_phen_long, aes(doy))+
-#  geom_histogram()+
-#  facet_wrap(~phen, scales="free")
+ggplot(alex_phen_long, aes(doy))+
+  geom_histogram()+
+  facet_wrap(~phen, scales="free")
 
 #Remove outliers
-sort(unique(phen_cols$Cap_ripe_first))# 46 -remove 
-sort(unique(phen_cols$First_day))#80?-- should be 180
-filter(alex_phen, First_day=="80")
-sort(unique(phen_cols$Flower_mat_first))#129? -remove 
-filter(alex_phen, Flower_mat_first=="129")#remove value--this plant only measured fruiting 
+sort(unique(phen_cols$pheno_flower_fruit_mature_first))# 46 -remove 
+sort(unique(phen_cols$pheno_flower_mature_first))#129? -remove 
 
-#remove outliers (n=3)
-alex_phen<-filter(alex_phen, Cap_ripe_first!=46|is.na(Cap_ripe_first))%>%filter(First_day!=80|is.na(First_day))%>%
-  filter(Flower_mat_first!=129|is.na(Flower_mat_first)) 
+#remove outliers (n=2)
+alex_phen<-filter(alex_phen, pheno_flower_fruit_mature_first!=46|is.na(pheno_flower_fruit_mature_first))%>%
+  filter(pheno_flower_mature_first!=129|is.na(pheno_flower_mature_first)) 
 
 #pivot long for plotting 
 alex_phen_long<-pivot_longer(alex_phen, cols = all_of(phen_colsx), 
                              names_to = "phen", values_to = "doy")%>%
-  select(Site, Species, Year, Plot, Plant, Otctreatment, Snowtreatment, Ferttreatment, Replicate,phen, doy)%>%
+  select(site, species, year, plot, plant_id, otc_treatment, snow_treatment,
+         fert_treatment, na_replicate,phen, doy)%>%
   filter(!is.na(doy))
-
-#plot again
-#ggplot(alex_phen_long, aes(doy))+
-#  geom_histogram()+
-#  facet_wrap(~phen, scales="free")
 
 #how many observations for each measurement x spp x year? 
 #alex_phen_long_cts<-filter(alex_phen_long, !is.na(doy))%>%group_by(phen)%>%dplyr::summarise(ct=n())
-alex_phen_long_cts<-filter(alex_phen_long)%>%group_by(phen, Year, Species)%>%
-  dplyr::summarise(ct=n()) 
+alex_phen_long_cts<-filter(alex_phen_long)%>%group_by(phen, species)%>%
+  dplyr::summarise(ct=n())%>%group_by(phen)%>%
+  mutate(nspp=(n_distinct(species)))
+#low_cts<-filter(alex_phen_long_cts, nspp<3)
+#low_cts<-unique(low_cts$phen)
 
 #Now plot by species 
 specColor <- c(
@@ -79,196 +72,79 @@ specColor <- c(
   "#8A7C64", "#599861")
 
 #plot 
-#ggplot(alex_phen_long, aes(doy, fill=Species))+
-#  geom_histogram(alpha=0.7)+ scale_fill_manual(values=specColor[c(1:5,34:36,38:40)]) +
-#  facet_wrap(~phen, scales="free")+ theme_bw()
-
-#update inconsistent naming
-#naming could be inconsistent in same species across years &/or same species across sites  
-alex_phen_long2<-mutate(alex_phen_long, phen2=case_when(phen=="Aborted_seed_disp"~"Abort", 
-                                                        phen=="Cap_deh"~"Cap_open_first", 
-                                                        phen=="Cap_twist"~"Cap_mat_first",
-                                                        phen=="Frt_deh"~"Seed_disp",
-                                                        phen=="Leaf_eaten"& Species=="Salix"~"Herb",
-                                                        phen=="Leaf_mat_sen"~"Leaf_mat",
-                                                        phen=="Pd_elong"& Species=="SaxOpp"~"Petal_fall_first",
-                                                        phen=="Seed_disp_cap_mat"~"Seed_disp",
-                                                        phen=="Seed_fall"& Species=="Luzula"~"Seed_disp",
-                                                        phen=="Seed_imm_cap_cap_twist_fem_swell"~"Seed_disp",
-                                                        phen=="Sen_first"~"Leaf_sen", 
-                                                        phen=="Slv"~"Leaf_sen", 
-                                                        phen=="Flower_exp"~"Flower_bbk_first",
-                                                        phen=="Veg_bbk"~"Leaf_new",
-                                                        phen=="Leaf_bud"~"Leaf_new",
-                                                        phen=="Green_leaf"~"Leaf_new",
-                                                        phen=="Shoot_bbk"~"Leaf_new",
-                                                        phen=="Elong_first"~"Flower_elong_first",
-                                                        phen=="Flower_open_first"& Species=="SaxOpp"~"Flower_mat_first",
-                                                        phen=="Petal_sen_first"~"Flower_sen_first", 
-                                                        phen=="Leaf_bbk"&Year==2001&Species=="Arctagrostis"~"Leaf_sen",
-                                                        phen=="Leaf_bbk"&Year!=2001&Species=="Arctagrostis"~"Leaf_new",
-                                                        TRUE~ phen))
-
-
-#Remove rarely measured (and non-phen)
-alex_phen_long2<-subset(alex_phen_long2, 
-                        phen!="Elong_old"&phen!="Flower_bbk_and_elong"& phen!="Flower_herb" &phen!="Dendro_distance_from_centre_m"&phen!="Finaldate" 
-                        &phen!="Leaf_mat_border_line"&phen!="Leaf_mat_old"&phen!="Pd_brkn"&phen!="Rosets_alive"&phen!="Unfertilized"
-                        &phen!="Unisex_senescence"&phen!="Percent_green" &phen!="Leaf_eaten")%>%distinct(.)
-
-
-##keep track of renamed 
-alex_phen_long2<- mutate(alex_phen_long2,
-                         renamed=if_else(phen2!=phen, 'Y', 'N'))%>%mutate(phen=phen2)%>%select(-phen2)
-
-#plot cleaned 
-ggplot(alex_phen_long2, aes(doy, fill=Species))+
+ggplot(alex_phen_long, aes(doy, fill=species))+
   geom_histogram(alpha=0.7)+ scale_fill_manual(values=specColor[c(1:5,34:36,38:40)]) +
   facet_wrap(~phen, scales="free")+ theme_bw()
 
+##Remove rarely measured 
+#alex_phen<-select(alex_phen,-any_of(low_cts))
+
+#remove low cts cols
+#phen_colsx<-phen_colsx[!(phen_colsx %in% low_cts)]
+
 #put NAs in blank plant #s 
-alex_phen_long2 <-alex_phen_long2 %>% mutate_at(.vars = 'Plant', na_if,"")
-
-#make full id column to pull out dups 
-alex_phen_long3<-unite(alex_phen_long2, "all", 
-                       Site:phen, remove=F)%>%distinct(.) #  %>%group_by(all)%>% mutate(n=n())
-
-#deal with duplicates bc of renaming or due to no plant ID#
-#TAKE MEAN OF VALUES
-#look at difference between each value and mean, if >3 days~fill doy with NA 
-alex_phen_long3<-group_by(alex_phen_long3,all)%>%mutate(doy2=round(mean(doy, na.rm=T)))%>%
-  mutate(diff=abs(doy2-doy), n=n())
-
-#use NA real for double vector   
-alex_phen_long4<- mutate(alex_phen_long3, doy=doy2)%>%distinct(.)%>%mutate(doy=if_else(diff<4, doy, NA_real_))%>%
-  select(-doy2, -diff, -renamed, -n)%>%
-  distinct(.) 
-
-#plot
-#ggplot(alex_phen_long4, aes(doy, fill=Species))+
-#  geom_histogram(alpha=0.7)+ scale_fill_manual(values=specColor[c(1:5,34:36,38:40)]) +
-#  facet_wrap(~phen, scales="free")+ theme_bw()
-
-#spread back wide
-alex_phen_long4$all<-NULL
-#if still dups take mean
-alex_phen2<-pivot_wider(alex_phen_long4, names_from = "phen", values_from = "doy",values_fn = mean)
-
+sort(unique(alex_phen_long$plant_id))
+alex_phen_long <-alex_phen_long %>% mutate_at(.vars = 'plant_id', na_if,"")
 
 
 #TRAITS/FITNESS----
 #now look at range of non phenology measurements 
 #select numeric non-phenology data 
-num_cols<-alex_phen%>% select_if(funs(is.numeric(.)))
-names(num_cols)                             
-num_cols<-dplyr::select(num_cols, -Year, -Plot, -Replicate)%>%
-  dplyr::select(contains(c("_no", "length" ,"height", "growth", "max", "Axis", "Agi", "Fpc", "plot", "Rosets",
-                    "Totals")))%>%dplyr::select(!contains(c("date", "day")))%>%dplyr::select(-Plant_no, Growth_ceased)
-num_colsx<-names(num_cols)
+trait_cols<-alex_phen%>% select_if(funs(is.numeric(.)))
+trait_cols<-dplyr::select(trait_cols, contains("trait_" )) 
+trait_colsx<-names(trait_cols)
+
 
 #pivot long for plotting
-alex_num_long<-pivot_longer(alex_phen, cols = all_of(num_colsx), 
-                             names_to = "counts", values_to = "value")%>%
-  select(Site, Species, Year, Plot, Plant, Otctreatment, Snowtreatment, Ferttreatment, Replicate, counts, value)%>%
+alex_trait_long<-pivot_longer(alex_phen, cols = all_of(trait_colsx), 
+                            names_to = "trait", values_to = "value")%>%
+  select(site, species, year, plot, plant_id, otc_treatment, snow_treatment, 
+         fert_treatment, na_replicate, trait, value)%>%
   filter(!is.na(value))
 
 #plot all 
-#ggplot(alex_num_long, aes(value))+
-#  geom_histogram()+
-#  facet_wrap(~counts, scales="free")
+ggplot(alex_trait_long, aes(value))+
+  geom_histogram()+
+  facet_wrap(~trait, scales="free")
 
 #outliers
-sort(unique(num_cols$Newgrowth))# 575?? possible? next highest is 37
-sort(unique(num_cols$Flower_height_max))# 1144?? next highest is 310 
+sort(unique(trait_cols$trait_agi_meas))# 575?? possible? next highest is 37
+sort(unique(trait_cols$trait_flower_height_max))# 1144?? next highest is 310 
 
 #remove outliers (n=2)
-alex_phen<-filter(alex_phen, Newgrowth!=575|is.na(Newgrowth))%>%
-  filter(Flower_height_max!=1144|is.na(Flower_height_max))
+alex_phen<-filter(alex_phen, trait_agi_meas!=575|is.na(trait_agi_meas))%>%
+  filter(trait_flower_height_max!=1144|is.na(trait_flower_height_max))
 
 #pivot long for plotting
-alex_num_long<-pivot_longer(alex_phen, cols = all_of(num_colsx), 
-                            names_to = "counts", values_to = "value")%>%
-  select(Site, Species, Year, Plot, Plant, Otctreatment, Snowtreatment, Ferttreatment, Replicate, counts, value)%>%
-  filter(!is.na(value))
-
-#plot again 
-#ggplot(alex_num_long, aes(value))+
-#  geom_histogram()+
- # facet_wrap(~counts, scales="free")
+alex_trait_long<-pivot_longer(alex_phen, cols = all_of(trait_colsx), 
+                              names_to = "trait", values_to = "value")%>%
+  select(site, species, year, plot, plant_id, otc_treatment, snow_treatment, 
+         fert_treatment, na_replicate, trait, value)%>%
+  filter(!is.na(value))%>%distinct(.)
 
 #how many observations for each measurement x spp x year? 
-alex_num_long_cts<-filter(alex_num_long, !is.na(value))%>%group_by(counts, Year, Species)%>%
-  dplyr::summarise(ct=n())
+alex_trait_long_cts<-filter(alex_trait_long, !is.na(value))%>%
+  group_by(trait, species)%>%
+  dplyr::summarise(ct=n())%>%group_by(trait)%>%mutate(nspp=n_distinct(species))
+#low_tcts<-filter(alex_trait_long_cts, nspp<3)
+#low_tcts<-unique(low_tcts$trait)
 
-#plot by species
-#ggplot(alex_num_long, aes(value,fill=Species))+
-#  geom_histogram(alpha=0.7)+ scale_fill_manual(values=specColor[c(1:5,34:36,38:40)]) +
- # facet_wrap(~counts, scales="free")+ theme_bw()
+#Remove rarely measured (
+#alex_phen<-select(alex_phen,-any_of(low_tcts))
 
-#update inconsistent naming
-#naming could be inconsistent in same species across years &/or same species across sites  
-alex_num_long2<-mutate(alex_num_long, counts2=case_when(counts=="Aborted_total_no"~"Aborted_no", 
-                                                        counts=="Cap_imm_total_no"~"Cap_imm_no", 
-                                                        counts=="Cap_mat_total_no"~"Cap_mat_no",
-                                                        counts=="Cap_total_no"~"Cap_max", 
-                                                        counts=="Flower_bbk_total_no"~"Flower_bbk_no",
-                                                        counts=="Flower_bbk_max"~"Flower_bbk_no",
-                                                        counts=="Flower_bud_total_no"~"Flower_bud_no",
-                                                        counts=="Flower_bud_max"~"Flower_bud_no",
-                                                        counts=="Flower_mat_total_no"~"Flower_mat_no",
-                                                        counts=="Flower_mat_max"~"Flower_mat_no",
-                                                        counts=="Flower_no_max"~"Flower_no", #these have dups 
-                                                        counts=="Flower_no_old"~"Flower_no", #these have dups
-                                                        counts=="Flowers_plot_max"~"Flowers_per_plot", 
-                                                        counts=="Fpc"~"Flowers_no_per_clone", 
-                                                        counts=="Slv_no"~"Leaf_sen_no", 
-                                                        counts=="Flower_sen_max"~"Flower_sen_no",
-                                                        counts=="Flower_sen_total_no"~"Flower_sen_no",
-                                                        counts=="Leaf_no_max"~"Leaf_no",  
-                                                        counts=="Petal_wilt_total_no"~"Petal_sen_no", 
-                                                        counts=="Pollen_total_no"~"Poll_no", 
-                                                        counts=="Seed_fall_no"~"Seed_no", #these have dups
-                                                        counts=="Seed_disp_max"~"Seed_no", 
-                                                        counts=="Seed_disp_no"~"Seed_no",
-                                                         TRUE~ counts))
-
-#Remove rarely measured (and non-phen)
-alex_num_long2<-subset(alex_num_long2, 
-        counts!="Flower_elong_total_no" & counts!="Frt_deh_no"&counts!="Flower_open_no" & counts!="Cap_ripe_total_no"&
-          counts!="First_leaf_mat_no" &counts!= "Flower_herb_no"& counts!= "Flower_unfert_total_no" &counts!="Petal_fall_no")%>%
-           distinct(.)
-##keep track of renamed 
-alex_num_long2<- mutate(alex_num_long2,renamed=if_else(counts2!=counts, 'Y', 'N'))%>%mutate(counts=counts2)%>%select(-counts2)
-
-#plot cleaned 
-ggplot(alex_num_long2, aes(value, fill=Species))+
-  geom_histogram(alpha=0.7)+ scale_fill_manual(values=specColor[c(1:5,34:36,38:40)]) +
-  facet_wrap(~counts, scales="free")+ theme_bw()
+#remove low cts cols
+#trait_colsx<-trait_colsx[!(trait_colsx %in% low_tcts)]
 
 #put NAs in blank plant #s 
-alex_num_long2 <-alex_num_long2 %>% mutate_at(.vars = 'Plant', na_if,"")
+alex_trait_long <-alex_trait_long %>% mutate_at(.vars = 'plant_id', na_if,"")
 
-#make full id column to pull out dups 
-alex_num_long3<-unite(alex_num_long2, "all", 
-                       Site:counts, remove=F)%>%distinct(.) #  %>%group_by(all)%>% mutate(n=n())
+#now plot by spp 
+ggplot(alex_trait_long, aes(value, fill=species))+
+  geom_histogram(alpha=0.7)+ scale_fill_manual(values=specColor[c(1:5,34:36,38:40)]) +
+  facet_wrap(~trait, scales="free")+ theme_bw()
+#weird remove 
+alex_phen<-select(alex_phen, -trait_flower_open_petals_no)
 
-#deal with duplicates bc of renaming or due to no plant ID#
-#TAKE MEAN OF VALUES
-alex_num_long3<-group_by(alex_num_long3,all)%>%mutate(value2=round(mean(value, na.rm=T)))%>%
-  mutate(diff=abs(value2-value), n=n())
-
-alex_num_long4<- mutate(alex_num_long3, value=value2)%>%distinct(.)%>%#mutate(doy=if_else(diff<4, doy, NA_real_))%>%
-  select(-value2, -diff, -renamed, -n)%>%
-  distinct(.)
-
-  #spread back wide
-alex_num_long4$all<-NULL
-alex_num2<-pivot_wider(alex_num_long4, names_from = "counts", values_from = "value")
-
-
-#FULL JOIN 
-alex_phen_all<-left_join(alex_phen2, alex_num2)
-names(alex_phen_all)
-save(alex_phen_all, file='data/alex_cleaned_phen.Rdata')
+save(alex_phen, file='data/alex_cleaned_phen.Rdata')
 
 
