@@ -42,4 +42,4 @@ vignettes/*.pdf
 
 #raw data until paper published 
 /data/
-/scripts/OLD/ **old scripts 
+/scripts/OLD/
