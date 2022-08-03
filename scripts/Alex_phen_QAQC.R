@@ -128,6 +128,11 @@ alex_trait_long_cts<-filter(alex_trait_long, !is.na(value))%>%
   dplyr::summarise(ct=n())%>%group_by(trait)%>%mutate(nspp=n_distinct(species))
 #low_tcts<-filter(alex_trait_long_cts, nspp<3)
 #low_tcts<-unique(low_tcts$trait)
+alex_trait_cts<-filter(alex_trait_long, !is.na(value))%>%
+  group_by(trait)%>%
+  dplyr::summarise(ct=n())
+
+check<-select(alex_trait_long_cts, trait, nspp)%>%distinct(.)
 
 #Remove rarely measured (
 #alex_phen<-select(alex_phen,-any_of(low_tcts))

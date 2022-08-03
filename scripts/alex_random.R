@@ -1,51 +1,45 @@
 load(file='data/alex_cleaned_phen.Rdata')
 #look at phen x traits relationships in and out of OTCs 
 #ideally will want to have delta days OTC vs CTL as the predictor and the trait values as response (aggregated how?)
-#also look into whether warming alters the max vs averages of the traits 
+#also look into whether warming alters the max vs averages of the traits?
 
-# standardize trait names across species 
+#traits 
 
-#this was a quick fix on 4/19/22 to compile the traits
-#want to go back and rewrite everything with Ross's compiled dataset in Alex phen QAQC
-#also probably want to make sure the traits were measured in multiple years for future analyses****
-traits<-read.csv("data/traits_AF.csv")
-traits<-select(traits,-Notes, -ct)%>%mutate_all(na_if,"")%>%filter(!is.na(trait_simple))
-colnames<-unique(traits$counts)
-colnames2<-names(alex_phen_all[, c(1:8)])
-colnames3<-append(colnames2, colnames)
+#Time of flowering ~ fruit number (mature)
+ggplot(alex_phen,
+       aes(x=pheno_flower_mature_first, y=log(trait_flower_fruit_mature_no), fill=otc_treatment))+
+  geom_point(aes(colour=factor(otc_treatment)), alpha=0.5)+
+  #geom_smooth(method = lm, formula = y ~ splines::bs(x, 3)) + #cubic spline
+    geom_smooth(method='lm') + scale_fill_manual(values=specColor)+ scale_color_manual(values=specColor)+
+  #geom_smooth(method='gam', formula= y ~ s(x, bs = "cs", fx = TRUE, k = 3)) + 
+  theme_bw()+#+  facet_wrap(~species,scales = "free_y")+ 
+  ylab("Num fruit (log)")+ xlab("DOY mature flower")
 
-alex_phen_long<-alex_phen_all%>%
-  pivot_longer( cols = all_of(colnames), 
-                names_to = "counts", values_to = "value")%>%
-  left_join(., traits)%>%filter(!is.na(value))%>%filter(!is.na(trait_simple))%>%distinct(.)
-#plot
-ggplot(alex_phen_long, aes(value, fill=Species))+
-  geom_histogram(alpha=0.7)+ scale_fill_manual(values=specColor[c(1:5,34:36,38:40)]) +
-  facet_wrap(~trait_simple, scales="free")+ theme_bw()
-
-alex_phen_trait<-pivot_wider(alex_phen_long, names_from = c("trait_simple","early_late", "mean_max"), 
-                            values_from = "value")%>% 
-  mutate_all(na_if,"NULL")
 
 #Time of flowering ~ flower height/size
-#all-#OTC taller (direct effect of warming)
-#max
-ggplot(alex_phen_trait,
-       aes(x=Flower_mat_first, y=repro_length_NA_max, fill=Otctreatment))+
-  geom_point(aes(colour=factor(Otctreatment)), alpha=0.5)+
-  geom_smooth(method='lm') + 
-  #geom_smooth(method='gam', formula= y ~ s(x, bs = "cs", fx = TRUE, k = 3)) + 
-  theme_bw()+ # facet_wrap(~Species,scales = "free_y")+ 
-  ylab("Max repro height (cm)")+ xlab("DOY mature flower")
+#mean
+ 
 
 #mean
-ggplot(alex_phen_trait,
-       aes(x=Flower_mat_first, y=repro_length_NA_mean, fill=Otctreatment))+
-  geom_point(aes(colour=factor(Otctreatment)), alpha=0.5)+
+ggplot(alex_phen,
+       aes(x=pheno_flower_mature_first, y=trait_flower_height_avg, fill=otc_treatment))+
+  geom_point(aes(colour=factor(otc_treatment)), alpha=0.5)+
   geom_smooth(method='lm') + scale_fill_manual(values=specColor)+ scale_color_manual(values=specColor)+
   #geom_smooth(method='gam', formula= y ~ s(x, bs = "cs", fx = TRUE, k = 3)) + 
-  theme_bw()+ # facet_wrap(~Species,scales = "free_y")+ 
+  theme_bw()+#  facet_wrap(~species,scales = "free_y")+ 
   ylab("Mean repro height (cm)")+ xlab("DOY mature flower")
+
+
+#mean
+ggplot(alex_phen,
+       aes(x=pheno_flower_mature_first, y=trait_flower_height_avg, fill=otc_treatment))+
+  geom_point(aes(colour=factor(otc_treatment)), alpha=0.5)+
+  geom_smooth(method='lm') + scale_fill_manual(values=specColor)+ scale_color_manual(values=specColor)+
+  #geom_smooth(method='gam', formula= y ~ s(x, bs = "cs", fx = TRUE, k = 3)) + 
+  theme_bw()+  facet_wrap(~species,scales = "free_y")+ 
+  ylab("Mean repro height (cm)")+ xlab("DOY mature flower")
+
+
 
 #by species-diff patterns 
 ggplot(subset(alex_phen_trait,Species!="Arctagrostis"&Species!="Cassiope"), #no data
@@ -58,7 +52,7 @@ ggplot(subset(alex_phen_trait,Species!="Arctagrostis"&Species!="Cassiope"), #no 
 ggplot(subset(alex_phen_trait,Species!="Arctagrostis"&Species!="Cassiope"&Species!="Oxyria"), #no data
        aes(x=Flower_mat_first, y=repro_length_NA_mean, fill=Otctreatment))+
   geom_point(aes(colour=factor(Otctreatment)), alpha=0.5)+
-  geom_smooth(method='lm') + theme_bw()+ facet_wrap(~Species,scales = "free_y")+ 
+  geom_smooth() + theme_bw()+ facet_wrap(~Species,scales = "free_y")+ 
   ylab("Mean repro height (cm)")+ xlab("DOY mature flower")
 
 #Time of flowering ~ flower number
