@@ -1,5 +1,9 @@
 #load alex data
 load(file='data/alex_cleaned_phen.Rdata')
+
+#OR with prior visit censored (averaged) DOYs 
+#load(file='data/alex_cleaned_phen_censored.Rdata')
+
 library(dplyr)
 #color pallette
 specColor <- c(
@@ -277,8 +281,10 @@ ggplot(subset(all_phen_long,trait_simple2=="flower_no"&phen=="first_flower_open"
   geom_smooth(method='lm') + #scale_colour_viridis_b()+
   scale_fill_manual(values=specColor)+ scale_color_manual(values=specColor)+
   #geom_smooth(method='gam', formula= y ~ s(x, bs = "cs", fx = TRUE, k = 3)) + 
-  theme_bw()+  facet_wrap(~species,scales = "free")+ 
-  ylab("Num flowers (log)")+ xlab("DOY mature flower")
+  theme_bw()+   #facet_wrap(~species,scales = "free")+ 
+  ylab("Num flowers (log)")+ xlab("DOY mature flower")+
+  labs(colour="Treatment")+ guides(fill="none")
+  
 
 #flower time ~ fruit #
 ggplot(subset(all_phen_long,trait_simple2=="fruit_no"&phen=="first_flower_open"),
@@ -288,8 +294,9 @@ ggplot(subset(all_phen_long,trait_simple2=="fruit_no"&phen=="first_flower_open")
   geom_smooth(method='lm') + #scale_colour_viridis_b()+
   scale_fill_manual(values=specColor)+ scale_color_manual(values=specColor)+
   #geom_smooth(method='gam', formula= y ~ s(x, bs = "cs", fx = TRUE, k = 3)) + 
-  theme_bw()+  facet_wrap(~species,scales = "free")+ 
-  ylab("Num fruits (log)")+ xlab("DOY mature flower") + ylim(0,3.5)
+  theme_bw()+ # facet_wrap(~species,scales = "free")+ 
+  ylab("Num fruits (log)")+ xlab("DOY mature flower") + ylim(0,3.5)+
+  labs(colour="Treatment")+ guides(fill="none")
 
 #flower time ~ repro size
 ggplot(subset(all_phen_long,trait_simple2=="repro_size"&phen=="first_flower_open"),
@@ -299,8 +306,9 @@ ggplot(subset(all_phen_long,trait_simple2=="repro_size"&phen=="first_flower_open
   geom_smooth(method='lm') + #scale_colour_viridis_b()+
   scale_fill_manual(values=specColor)+ scale_color_manual(values=specColor)+
   #geom_smooth(method='gam', formula= y ~ s(x, bs = "cs", fx = TRUE, k = 3)) + 
-  theme_bw()+  facet_wrap(~species,scales = "free")+ 
-  ylab("Reproductive size (mm) (log)")+ xlab("DOY mature flower")+ ylim(2,6.5)
+  theme_bw()+#  facet_wrap(~species,scales = "free")+ 
+  ylab("Reproductive size (mm) (log)")+ xlab("DOY mature flower")+ ylim(2,6.5)+
+  labs(colour="Treatment")+ guides(fill="none")
 
 #flower time ~ veg growth
 ggplot(subset(all_phen_long,trait_simple2=="veg_growth"&phen=="first_flower_bud"),
@@ -310,8 +318,9 @@ ggplot(subset(all_phen_long,trait_simple2=="veg_growth"&phen=="first_flower_bud"
   geom_smooth(method='lm') + #scale_colour_viridis_b()+
   scale_fill_manual(values=specColor)+ scale_color_manual(values=specColor)+
   #geom_smooth(method='gam', formula= y ~ s(x, bs = "cs", fx = TRUE, k = 3)) + 
-  theme_bw()+  facet_wrap(~species,scales = "free")+ 
-  ylab("Stem growth (mm) (log)")+ xlab("DOY mature flower")
+  theme_bw()+ # facet_wrap(~species,scales = "free")+ 
+  ylab("Stem growth (mm) (log)")+ xlab("DOY mature flower")+
+  labs(colour="Treatment")+ guides(fill="none")
 
 
 #run mixed effects models 
@@ -327,6 +336,9 @@ all_phen$leaf_no<-as.numeric(as.character(all_phen$leaf_no))
 all_phen$first_flower_open<-as.numeric(as.character(all_phen$first_flower_open))
 all_phen$first_flower_bud<-as.numeric(as.character(all_phen$first_flower_bud))
 all_phen$first_flower_shed<-as.numeric(as.character(all_phen$first_flower_shed))
+
+hist(log(all_phen$year))
+hist(all_phen$first_flower_open)
 
 #flower #
 summary(lmer(log(flower_no+1)~first_flower_open*otc_treatment + (1|species) + (1|site), all_phen))
