@@ -2,7 +2,7 @@
 load(file='data/alex_cleaned_phen.Rdata')
 
 #OR with prior visit censored (averaged) DOYs 
-#load(file='data/alex_cleaned_phen_censored.Rdata')
+load(file='data/alex_cleaned_phen_censored.Rdata')
 
 library(dplyr)
 #color pallette
@@ -155,6 +155,7 @@ ggplot(subset(alex_phen2_long,trait_simple2=="veg_growth"&phen=="pheno_flower_ma
   #geom_smooth(method='gam', formula= y ~ s(x, bs = "cs", fx = TRUE, k = 3)) + 
   theme_bw() +#  facet_wrap(~species,scales = "free")+ 
   ylab("Veg growth")+ xlab("DOY mature flower")
+
 #by spp
 ggplot(subset(alex_phen2_long,trait_simple2=="veg_growth"&phen=="pheno_flower_mature_first"),
        aes(x=doy, y=log(value+1), fill=otc_treatment))+
@@ -259,7 +260,7 @@ ggplot(all_phen_long,
   geom_smooth(method='lm') + scale_fill_manual(values=specColor)+ #scale_color_manual(values=specColor)+
   scale_color_viridis_c()+
   #geom_smooth(method='gam', formula= y ~ s(x, bs = "cs", fx = TRUE, k = 3)) + 
-  theme_bw()+  facet_wrap(~phen+ trait_simple2,scales = "free")+ 
+  theme_bw()+  facet_wrap(~trait_simple2+ phen,scales = "free")+ 
   ylab("trait value (log)")+ xlab("phen DOY")
 
 #subset for those with full time span observed 
@@ -356,3 +357,40 @@ summary(lmer(log(repro_size+1)~first_flower_open*otc_treatment + (1|species) + (
 summary(lmer(log(veg_growth+1)~first_flower_open*otc_treatment + (1|species) + (1|site), all_phen))
 #flowering time negative 
 
+
+###Post ESA analyses----
+#Sep 1 2022
+#rename into site, subsite 
+all_phen_long<- rename(all_phen_long,subsite=site)%>%
+  mutate(site=if_else(subsite=="DL", "Daring Lake", "Alexandra Fiord"))
+
+#plot by site
+ggplot(all_phen_long,
+       aes(x=doy, y=log(value+1), fill=otc_treatment))+
+  geom_point(aes(colour=year), alpha=0.5)+
+  #geom_smooth(method = lm, formula = y ~ splines::bs(x, 3)) + #cubic spline
+  geom_smooth(method='lm') + scale_fill_manual(values=specColor)+ #scale_color_manual(values=specColor)+
+  scale_color_viridis_c()+
+  #geom_smooth(method='gam', formula= y ~ s(x, bs = "cs", fx = TRUE, k = 3)) + 
+  theme_bw()+  facet_wrap(~trait_simple2+ phen,scales = "free")+ 
+  ylab("trait value (log)")+ xlab("phen DOY")
+
+#year pattern is conflated with site for several measurements 
+#probably need to analyze sites separately or have site and year as random effects 
+#try models again with year 
+
+#flower #
+summary(lmer(log(flower_no+1)~first_flower_open*otc_treatment  + (1|species) + (1|site) + (year|year), all_phen))
+#flowering time negative, OTC negative, interaction positive
+
+#fruit # *doesn't converge with site level effect*
+summary(lmer(log(fruit_no+1)~first_flower_open*otc_treatment + (1|species) , all_phen))
+#flowering time negative 
+
+#repro size
+summary(lmer(log(repro_size+1)~first_flower_open*otc_treatment + (1|species) + (1|site), all_phen))
+#flowering time negative, interaction positive (weak)
+
+#veg growth
+summary(lmer(log(veg_growth+1)~first_flower_open*otc_treatment + (1|species) + (1|site), all_phen))
+#flowering time negative 

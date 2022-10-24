@@ -15,7 +15,7 @@ specColor <- c(
   "#673770", "#D3D93E", "#38333E", "#508578", "#D7C1B1", "#689030", "#AD6F3B", "#CD9BCD",
   "#D14285", "#6DDE88", "#652926", "#7FDCC0", "#C84248", "#8569D5", "#5E738F", "#D1A33D",
   "#8A7C64", "#599861")
-
+#OTC analyses----
 #eriophorum, ledum and vaccinium have OTCs
 OTCspp<-subset(phen_demw, species=="ledum"|species=="eriophorum"|species=="vaccinium")
 
@@ -141,12 +141,42 @@ oxy<-oxy %>% select_if(~sum(!is.na(.)) > 0)  #remove cols with no data
 unique(oxy$plant_id)
 
 
-#now just pull out numbers from all 
-oxy<-mutate(oxy, plant_id=as.character(extract_numeric(plant_id))%>%mutate(plant_id=as.character(plant_id))
-            
-            #see how individuals are tracked through time 
-            oxy<-arrange(oxy, plant_id, year)
-            indiv<-group_by(oxy, plant_id)%>%count()
+
             
             
-            
+
+#Shrub analyses----
+#based on interesting that shrub growth x flowering time interactions in ESA poster 8/30/22
+
+#add in betula and salix flowering stages 
+daring_phen<-select(phen_demw, species, year, plantid, treatment, first_flower_bud, 
+                     first_anther, first_flower_open,first_flower_shed, num_flowering_stalks_1,
+                     num_flowers_per_stalk_1, num_flowers_1, num_fruit_per_stalk_1, 
+                     num_fruit_1, growth_inc_mm_1, growth_inc_mm_2, growth_inc_mm_3,
+                     flowering_stalk_length_mm_early_1, flowering_stalk_length_mm_late_1)
+#subset only shrubs w/ growth increments 
+daring_phen<-subset(daring_phen, !is.na(growth_inc_mm_1))
+
+phen_colsx<-c("first_flower_bud","first_anther", "first_flower_open")
+trait_colsx<-c("num_flowering_stalks_1","num_flowers_per_stalk_1", "num_flowers_1",
+               "num_fruit_per_stalk_1", "num_fruit_1",
+               "growth_inc_mm_1", "growth_inc_mm_2", "growth_inc_mm_3",
+               "flowering_stalk_length_mm_early_1", "flowering_stalk_length_mm_late_1") 
+
+#pivot long for renaming
+daring_phen_long<-pivot_longer(daring_phen, cols = all_of(phen_colsx), 
+                                names_to = "phen", values_to = "doy")%>%
+  pivot_longer(.,  cols = all_of(trait_colsx), 
+               names_to = "trait", values_to = "value")%>%
+  filter(!is.na(doy))%>%                
+  filter(!is.na(value))
+
+#separate out replicated measurements within an individual
+daring_phen_long<-separate(daring_phen_long, trait,
+                                    into = c("trait", "replicate"), 
+                                    sep ="_(?=[0-9])", remove=F)
+                           
+#renaming sheet
+daring_cts<-group_by(daring_phen_long, species, trait)%>%summarise(ct=n())
+#write.csv(daring_cts, 'data/traits_DL2.csv')
+
