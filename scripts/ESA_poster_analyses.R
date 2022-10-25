@@ -5,6 +5,13 @@ load(file='data/alex_cleaned_phen.Rdata')
 load(file='data/alex_cleaned_phen_censored.Rdata')
 
 library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(lme4)
+library(lmerTest)
+library(optimx)
+
+
 #color pallette
 specColor <- c(
   "#89C5DA", "#DA5724", "#74D944", "#CE50CA", "#3F4921", "#C0717C", "#CBD588", "#5F7FC7",
@@ -286,7 +293,6 @@ ggplot(subset(all_phen_long,trait_simple2=="flower_no"&phen=="first_flower_open"
   ylab("Num flowers (log)")+ xlab("DOY mature flower")+
   labs(colour="Treatment")+ guides(fill="none")
   
-
 #flower time ~ fruit #
 ggplot(subset(all_phen_long,trait_simple2=="fruit_no"&phen=="first_flower_open"),
        aes(x=doy, y=log(value+1), fill=otc_treatment))+
@@ -325,10 +331,12 @@ ggplot(subset(all_phen_long,trait_simple2=="veg_growth"&phen=="first_flower_bud"
 
 
 #run mixed effects models 
-all_phen<-pivot_wider(all_phen_long, names_from = phen, values_from = doy)%>%
+#rename into site, subsite 
+all_phen_long<- rename(all_phen_long,subsite=site)%>%
+  mutate(site=if_else(subsite=="DL", "Daring Lake", "Alexandra Fiord"))
+
+all_phen<-pivot_wider(all_phen_long, names_from = phen, values_from = doy, values_fn = mean)%>% #almost all duplicated so values_fn=mean
   pivot_wider(., names_from = trait_simple2, values_from = value)
-library(lme4)
-library(lmerTest)
 all_phen$flower_no<-as.numeric(as.character(all_phen$flower_no))
 all_phen$fruit_no<-as.numeric(as.character(all_phen$fruit_no))
 all_phen$veg_growth<-as.numeric(as.character(all_phen$veg_growth))
@@ -360,14 +368,11 @@ summary(lmer(log(veg_growth+1)~first_flower_open*otc_treatment + (1|species) + (
 
 ###Post ESA analyses----
 #Sep 1 2022
-#rename into site, subsite 
-all_phen_long<- rename(all_phen_long,subsite=site)%>%
-  mutate(site=if_else(subsite=="DL", "Daring Lake", "Alexandra Fiord"))
 
 #plot by site
-ggplot(all_phen_long,
+ggplot(subset(all_phen_long,trait_simple2!="leaf_no"&phen!="first_flower_shed"), 
        aes(x=doy, y=log(value+1), fill=otc_treatment))+
-  geom_point(aes(colour=year), alpha=0.5)+
+  geom_point(aes(colour=year, shape=site), alpha=0.5)+
   #geom_smooth(method = lm, formula = y ~ splines::bs(x, 3)) + #cubic spline
   geom_smooth(method='lm') + scale_fill_manual(values=specColor)+ #scale_color_manual(values=specColor)+
   scale_color_viridis_c()+
@@ -379,18 +384,32 @@ ggplot(all_phen_long,
 #probably need to analyze sites separately or have site and year as random effects 
 #try models again with year 
 
-#flower #
-summary(lmer(log(flower_no+1)~first_flower_open*otc_treatment  + (1|species) + (1|site) + (year|year), all_phen))
-#flowering time negative, OTC negative, interaction positive
+all_phen<-mutate(all_phen, expstart=case_when(site=="Daring Lake"~2001,
+                                              site=="Alexandra Fiord"~1992))%>%
+  mutate(yearswarm=year-expstart)
 
-#fruit # *doesn't converge with site level effect*
-summary(lmer(log(fruit_no+1)~first_flower_open*otc_treatment + (1|species) , all_phen))
+#flower #
+summary(lmer(log(flower_no+1)~first_flower_open*otc_treatment*yearswarm + (1|species) + (1|site) + (1|subsite)+ (1|year), all_phen))
+#flowering time negative, OTC negative, interaction positive
+#years warm highly correlates with first flower open
+#Because DL has both more recent coverage in years and earlier flowering (naturally)
+
+
+#fruit # 
+summary(lmer(log(fruit_no+1)~first_flower_open*otc_treatment + (1|species) + (1|species) + (1|site:year) + (1|year) , all_phen))
 #flowering time negative 
 
 #repro size
-summary(lmer(log(repro_size+1)~first_flower_open*otc_treatment + (1|species) + (1|site), all_phen))
-#flowering time negative, interaction positive (weak)
+summary(lmer(log(repro_size+1)~first_flower_open*otc_treatment + (1|species) + (1|site) + (1|year), all_phen))
+#flowering time negative, interaction positive
 
-#veg growth
-summary(lmer(log(veg_growth+1)~first_flower_open*otc_treatment + (1|species) + (1|site), all_phen))
-#flowering time negative 
+#veg growth (stem growth shrubs)
+summary(lmer(log(veg_growth+1)~first_flower_bud*otc_treatment + (1|species) + (1|site)  +
+               (1|year),control = lmerControl(optimizer= "optimx",
+                                              optCtrl  = list(method="nlminb")), all_phen))
+#flowering time negative, OTC positive, interaction negative  
+
+dl<-subset(all_phen_long, site=="Daring Lake")
+af<-subset(all_phen_long, site=="Alexandra Fiord")
+unique(dl$year)
+unique(af$year)
