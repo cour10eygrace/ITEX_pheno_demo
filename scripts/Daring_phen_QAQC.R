@@ -209,6 +209,7 @@ phen$doy[phen$doy=='169>168'&!is.na(phen$doy)&phen$Year=='2014']='168<169'
 phen$doy[phen$doy=='144<144'&!is.na(phen$doy)&phen$Year=='2013']='144<146'
 phen$doy[phen$doy=='192-192'&!is.na(phen$doy)&phen$Year=='2010']='190-192'
 phen$doy[phen$doy=='260'&!is.na(phen$doy)&phen$Year=='2007']='206'
+phen$doy[phen$doy=="-"]=NA
 
 #put these in comments, then set these to NA
 phen$Notes[phen$doy%in%c('0', 's', "206\\s", "x",
@@ -309,26 +310,24 @@ phenxx<-left_join(phen, obsdates)%>%group_by(year, species, treatment)%>%filter(
   select(year, species, treatment, phen_stage, Obs.date)
 
 #join with full dataset
-#if prior visit is NA fill in with min obs date
+#if prior visit is NA fill in with min obs date 
 phen<-left_join(phen, phenxx)%>%
   mutate(prior_visit=if_else(is.na(prior_visit), Obs.date, prior_visit))%>%
   select(-Obs.date)
 #check all phenology where pv not assigned
-#pvmiss<-subset(phen, is.na(prior_visit)& phen_stage!="obs snow free")%>%
+#pvmiss<-subset(phen, is.na(prior_visit))%>%
 #  select( species, year, phen_stage)%>%distinct(.)
 #either the case that snow free was not observed in that year/spp 
 #or that snow free entered as coarse date range which is same as first phenophases so diff=0
 #either way not informative for prior visits of early season phenology so remove these observations 
 
-# filter for phenology only (remove snow free) 
-phen_dem<-filter(phen, phen_stage!="obs snow free")
 
 #look at prior visits 
 #find earliest/latest observed dates across all years for each spp x phenophase
-pv_mins<-group_by(phen_dem, species, phen_stage)%>%summarise(pv_min=min(prior_visit, na.rm = T), 
+pv_mins<-group_by(phen, species, phen_stage)%>%summarise(pv_min=min(prior_visit, na.rm = T), 
                                                               doy_max=max(doy, na.rm = T))
 #merge full dataset with averages to infill 
-phen_dem<-mutate(phen_dem, diff=doy-prior_visit)%>%
+phen_dem<-mutate(phen, diff=doy-prior_visit)%>%
   left_join(., pv_mins)
 
 #first remove anything where NEITHER prior visit nor DOY has info- don't want to infill both values 
@@ -344,15 +343,23 @@ phen_dem<-mutate(phen_dem, prior_visit=if_else(is.na(prior_visit), pv_min, prior
 mutate(doy=if_else(is.na(doy), doy_max, doy))
 
 #check that all prior visits are earlier than doys & vice-versa
-check<-phen_dem%>% mutate(check=doy-pv_min, check2=doy_max-prior_visit)
+check3<-phen_dem%>% mutate(check=doy-pv_min, check2=doy_max-prior_visit)
 
+#one situation in snow free <120 where check is negative, put 117 (last day still neg air temp in 2014 climate data)
+phen_dem<-mutate(phen_dem, prior_visit=if_else(doy_orig=="<120", 117, prior_visit))
 
 #put back in rows with missing phen data for demographic tracking of individuals 
 phen_dem<-rbind(phen_dem, nophen)
 
+#check again
+check4<-filter(phen_dem, grepl("<|-|>", doy_orig))%>%select(-Notes,-trait,-value, -plant_id)%>%distinct(.)%>%
+  mutate(check=doy-prior_visit)
+  
 #then take average bw prior visit and doy as 'censored' phen observation
-phen_dem$DOY<-round((phen_dem$doy+phen_dem$prior_visit)/2)
-plot(phen_dem$DOY~phen_dem$doy)#visualize - error gets worse for later phenophases 
+#only do this for observations with a range listed##
+phen_dem<-mutate(phen_dem, DOY=if_else(grepl("<|-|>", doy_orig), round((doy+prior_visit)/2), doy))
+
+#plot(phen_dem$DOY~phen_dem$doy)#visualize - error gets worse for later phenophases 
 
 
 #plot all phen
@@ -365,9 +372,9 @@ specColor <- c(
   "#D14285", "#6DDE88", "#652926", "#7FDCC0", "#C84248", "#8569D5", "#5E738F", "#D1A33D",
   "#8A7C64", "#599861")
 
-ggplot(phen_dem, aes(DOY, fill=species))+
-  geom_histogram(alpha=0.7)+ scale_fill_manual(values=specColor[c(1:5,34:36,38:40)]) +
-  facet_wrap(~phen_stage+treatment, scales="free")+ theme_bw()
+#ggplot(phen_dem, aes(DOY, fill=species))+
+ # geom_histogram(alpha=0.7)+ scale_fill_manual(values=specColor[c(1:5,34:36,38:40)]) +
+  #facet_wrap(~phen_stage+treatment, scales="free")+ theme_bw()
 
 
 #combine phases that are same across spp 
@@ -384,11 +391,21 @@ phen_stage=="first female catkin"~"first catkin female",
 phen_stage=="first male catkin"~"first catkin male" ,
 TRUE~phen_stage))
 
-ggplot(phen_dem, aes(DOY, fill=species))+
-  geom_histogram(alpha=0.7)+ scale_fill_manual(values=specColor[c(1:5,34:36,38:40)]) +
-  facet_wrap(~phen_stage+treatment, scales="free")+ theme_bw()
+#ggplot(phen_dem, aes(DOY, fill=species))+
+ # geom_histogram(alpha=0.7)+ scale_fill_manual(values=specColor[c(1:5,34:36,38:40)]) +
+#  facet_wrap(~phen_stage+treatment, scales="free")+ theme_bw()
 
+
+#create DOY standardized off snow free dates for comparison with Alex
+sf<-filter(phen_dem, phen_stage=="obs snow free")%>%select(year, species,plant_id, treatment, DOY)%>%distinct(.)%>%rename(sfDOY=DOY)
+
+phen_dem<-filter(phen_dem, phen_stage!="obs snow free")%>%left_join(., sf)%>%
+  mutate(DOY_std=DOY-sfDOY)
+
+hist(phen_dem$DOY_std)# about 1100 observations before snow free date- possible? 
 
 save(phen_dem, file='data/DLphen_w_priorvisit.Rdata')
 #load('data/DLphen_w_priorvisit.Rdata')
+
+
 
