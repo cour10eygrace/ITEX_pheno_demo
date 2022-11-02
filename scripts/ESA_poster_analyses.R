@@ -1,9 +1,4 @@
-#load alex data
-load(file='data/alex_cleaned_phen.Rdata')
-
-#OR with prior visit censored (averaged) DOYs 
-load(file='data/alex_cleaned_phen_censored.Rdata')
-
+#Setup----
 library(dplyr)
 library(tidyr)
 library(ggplot2)
@@ -21,6 +16,12 @@ specColor <- c(
   "#673770", "#D3D93E", "#38333E", "#508578", "#D7C1B1", "#689030", "#AD6F3B", "#CD9BCD",
   "#D14285", "#6DDE88", "#652926", "#7FDCC0", "#C84248", "#8569D5", "#5E738F", "#D1A33D",
   "#8A7C64", "#599861")
+
+#load alex data----
+load(file='data/alex_cleaned_phen.Rdata')
+
+#OR with prior visit censored (averaged) DOYs 
+#load(file='data/alex_cleaned_phen_censored.Rdata')
 
 #select columns of interest 
 #just looking at flower phenology
@@ -54,7 +55,15 @@ alex_phen2_long<-pivot_longer(alex_phen2, cols = all_of(phen_colsx),
 traitsAF<-read.csv("data/traits_AF.csv")
 alex_phen2_long<-left_join(alex_phen2_long, traitsAF)%>%select(-ct)       
 
-#plot_all
+#std normalize doys within each year
+#can do this with snowmelt date also...
+alex_phen2_long<-group_by(alex_phen2_long, year)%>%mutate(avg=mean(doy), sd=sd(doy))%>%
+                                                            mutate(DOY=(doy-avg)/sd)
+hist(alex_phen2_long$DOY)
+
+
+
+#plot_all----
 ggplot(alex_phen2_long,
        aes(x=doy, y=log(value+1), fill=otc_treatment))+
   geom_point(aes(colour=factor(otc_treatment)), alpha=0.5)+
@@ -174,7 +183,7 @@ ggplot(subset(alex_phen2_long,trait_simple2=="veg_growth"&phen=="pheno_flower_ma
   ylab("Veg growth")+ xlab("DOY mature flower")
 
 
-#load daring data 
+#load daring data----
 load(file='data/DLphen_w_demog_all.Rdata')
 daring_phen<-subset(phen_demw, species=="ledum"|species=="eriophorum"|species=="vaccinium")
 
@@ -201,19 +210,25 @@ daring_phen2_long<-pivot_longer(daring_phen2, cols = all_of(phen_colsx),
   filter(!is.na(doy))%>%                
   filter(!is.na(value))
 
+
+#std normalize doys within each year
+daring_phen2_long<-group_by(daring_phen2_long, year)%>%mutate(avg=mean(doy), sd=sd(doy))%>%
+  mutate(DOY=(doy-avg)/sd)
+hist(daring_phen2_long$DOY)
+
 #renaming sheet
 #daring_cts<-group_by(daring_phen2_long, species, trait)%>%summarise(ct=n())
 #write.csv(daring_cts, 'data/traits_DL2.csv')
 
-#plot all 
-ggplot(daring_phen2_long,
-         aes(x=doy, y=log(value+1), fill=treatment))+
-  geom_point(aes(colour=factor(treatment)), alpha=0.5)+
+#plot 
+#ggplot(daring_phen2_long,
+ #        aes(x=doy, y=log(value+1), fill=treatment))+
+#  geom_point(aes(colour=factor(treatment)), alpha=0.5)+
   #geom_smooth(method = lm, formula = y ~ splines::bs(x, 3)) + #cubic spline
-  geom_smooth(method='lm') + scale_fill_manual(values=specColor)+ scale_color_manual(values=specColor)+
+#  geom_smooth(method='lm') + scale_fill_manual(values=specColor)+ scale_color_manual(values=specColor)+
   #geom_smooth(method='gam', formula= y ~ s(x, bs = "cs", fx = TRUE, k = 3)) + 
-  theme_bw()+  facet_wrap(~trait+phen,scales = "free")+ 
-  ylab("trait value (log)")+ xlab("phen DOY")
+ # theme_bw()+  facet_wrap(~trait+phen,scales = "free")+ 
+#  ylab("trait value (log)")+ xlab("phen DOY")
 
 #rename to match alex
 traitsDL<-read.csv("data/traits_DL2.csv")
@@ -230,7 +245,7 @@ daring_phen2_long<-rename(daring_phen2_long, plant_id=plantid, otc_treatment=tre
 alex_phen2_long<-select(alex_phen2_long, -snow_treatment, -fert_treatment, -trait_simple)
 
 daring_phen2_long<-select(daring_phen2_long, 
-  site, plot, year, species, plant_id, otc_treatment, phen, doy, trait, value, trait_simple2)
+  site, plot, year, species, plant_id, otc_treatment, phen, doy, DOY, trait, value, trait_simple2)
 #rename first anther to first flower open to match other daring spp 
 daring_phen2_long<- mutate(daring_phen2_long,
                            phen=if_else(phen=="first_anther", "first_flower_open", phen))
@@ -247,22 +262,55 @@ all_phen_long<- mutate(all_phen_long, phen=case_when(
                       TRUE~phen))
                       
 
-#plot all 
 all_phen_long<-subset(all_phen_long,trait_simple2!="")
 
-ggplot(all_phen_long,
-       aes(x=doy, y=log(value+1), fill=otc_treatment))+
+#plot all----
+ggplot(subset(all_phen_long,phen!="first_flower_shed"& trait_simple2!="leaf_no"),
+       aes(x=DOY, y=log(value+1), fill=otc_treatment))+
   geom_point(aes(colour=factor(otc_treatment)), alpha=0.5)+
   #geom_smooth(method = lm, formula = y ~ splines::bs(x, 3)) + #cubic spline
-  geom_smooth(method='lm') + scale_fill_manual(values=specColor)+ scale_color_manual(values=specColor)+
-  geom_smooth(method='gam', formula= y ~ s(x, bs = "cs", fx = TRUE, k = 3)) + 
-  theme_bw()+  facet_wrap(~phen+ trait_simple2,scales = "free")+ 
+  #geom_smooth(method='lm') +
+  scale_fill_manual(values=specColor)+ scale_color_manual(values=specColor)+
+  geom_smooth(method='gam', formula= y ~ s(x, bs = "cs", fx = TRUE, k = 2)) + 
+  theme_bw()+  facet_wrap(~trait_simple2 + phen ,scales = "free", nrow = 2)+ 
   ylab("trait value (log)")+ xlab("phen DOY")
 
 #plot by year
-ggplot(all_phen_long,
-       aes(x=doy, y=log(value+1), fill=otc_treatment))+
+ggplot(subset(all_phen_long,phen!="first_flower_shed"& trait_simple2!="leaf_no"),
+       aes(x=DOY, y=log(value+1), fill=otc_treatment))+
   geom_point(aes(colour=year), alpha=0.5)+
+  #geom_smooth(method = lm, formula = y ~ splines::bs(x, 3)) + #cubic spline
+  geom_smooth(method='lm') + scale_fill_manual(values=specColor)+ #scale_color_manual(values=specColor)+
+  scale_color_viridis_c()+
+  #geom_smooth(method='gam', formula= y ~ s(x, bs = "cs", fx = TRUE, k = 3)) + 
+  theme_bw()+  facet_wrap(~trait_simple2+ phen,scales = "free", nrow=2)+ 
+  ylab("trait value (log)")+ xlab("phen DOY")
+
+#plot by years warm
+ggplot(subset(all_phen_long,phen!="first_flower_shed"& trait_simple2!="leaf_no"),
+       aes(x=DOY, y=log(value+1), fill=otc_treatment))+
+  geom_point(aes(colour=yearswarm), alpha=0.5)+
+  #geom_smooth(method = lm, formula = y ~ splines::bs(x, 3)) + #cubic spline
+  geom_smooth(method='lm') + scale_fill_manual(values=specColor)+ #scale_color_manual(values=specColor)+
+  scale_color_viridis_c()+
+  #geom_smooth(method='gam', formula= y ~ s(x, bs = "cs", fx = TRUE, k = 3)) + 
+  theme_bw()+  facet_wrap(~trait_simple2+ phen,scales = "free", nrow=2)+ 
+  ylab("trait value (log)")+ xlab("phen DOY")
+
+#plot separately by site? 
+ggplot(subset(all_phen_long, site=="Alexandra Fiord"),
+       aes(x=DOY, y=log(value+1), fill=otc_treatment))+
+  geom_point(aes(colour=yearswarm), alpha=0.5)+
+  #geom_smooth(method = lm, formula = y ~ splines::bs(x, 3)) + #cubic spline
+  geom_smooth(method='lm') + scale_fill_manual(values=specColor)+ #scale_color_manual(values=specColor)+
+  scale_color_viridis_c()+
+  #geom_smooth(method='gam', formula= y ~ s(x, bs = "cs", fx = TRUE, k = 3)) + 
+  theme_bw()+  facet_wrap(~trait_simple2+ phen,scales = "free")+ 
+  ylab("trait value (log)")+ xlab("phen DOY")
+
+ggplot(subset(all_phen_long, site=="Daring Lake"),
+       aes(x=DOY, y=log(value+1), fill=otc_treatment))+
+  geom_point(aes(colour=yearswarm), alpha=0.5)+
   #geom_smooth(method = lm, formula = y ~ splines::bs(x, 3)) + #cubic spline
   geom_smooth(method='lm') + scale_fill_manual(values=specColor)+ #scale_color_manual(values=specColor)+
   scale_color_viridis_c()+
@@ -272,36 +320,36 @@ ggplot(all_phen_long,
 
 #subset for those with full time span observed 
 ggplot(subset(all_phen_long,trait_simple2!="leaf_no"&phen!="first_flower_shed"), 
-       aes(x=doy, y=log(value+1), fill=otc_treatment))+
+       aes(x=DOY, y=log(value+1), fill=otc_treatment))+
   geom_point(aes(colour=year), alpha=0.5)+
   #geom_smooth(method = lm, formula = y ~ splines::bs(x, 3)) + #cubic spline
   geom_smooth(method='lm') + scale_fill_manual(values=specColor)+ #scale_color_manual(values=specColor)+
   scale_color_viridis_c()+
   #geom_smooth(method='gam', formula= y ~ s(x, bs = "cs", fx = TRUE, k = 3)) + 
-  theme_bw()+  facet_wrap(~phen+ trait_simple2,scales = "free")+ 
+  theme_bw()+ # facet_wrap(~phen+ trait_simple2,scales = "free")+ 
   ylab("trait value (log)")+ xlab("phen DOY")
 
 #flower time ~ flower #
 ggplot(subset(all_phen_long,trait_simple2=="flower_no"&phen=="first_flower_open"),
-       aes(x=doy, y=log(value+1), fill=otc_treatment))+
+       aes(x=DOY, y=log(value+1), fill=otc_treatment))+
   geom_point(aes(colour=otc_treatment), alpha=0.5)+
   #geom_smooth(method = lm, formula = y ~ splines::bs(x, 3)) + #cubic spline
   geom_smooth(method='lm') + #scale_colour_viridis_b()+
   scale_fill_manual(values=specColor)+ scale_color_manual(values=specColor)+
   #geom_smooth(method='gam', formula= y ~ s(x, bs = "cs", fx = TRUE, k = 3)) + 
-  theme_bw()+   #facet_wrap(~species,scales = "free")+ 
+  theme_bw()+   facet_wrap(~species,scales = "free", nrow=2)+ 
   ylab("Num flowers (log)")+ xlab("DOY mature flower")+
   labs(colour="Treatment")+ guides(fill="none")
   
 #flower time ~ fruit #
 ggplot(subset(all_phen_long,trait_simple2=="fruit_no"&phen=="first_flower_open"),
-       aes(x=doy, y=log(value+1), fill=otc_treatment))+
+       aes(x=DOY, y=log(value+1), fill=otc_treatment))+
   geom_point(aes(colour=otc_treatment), alpha=0.5)+
   #geom_smooth(method = lm, formula = y ~ splines::bs(x, 3)) + #cubic spline
   geom_smooth(method='lm') + #scale_colour_viridis_b()+
   scale_fill_manual(values=specColor)+ scale_color_manual(values=specColor)+
   #geom_smooth(method='gam', formula= y ~ s(x, bs = "cs", fx = TRUE, k = 3)) + 
-  theme_bw()+ # facet_wrap(~species,scales = "free")+ 
+  theme_bw()+ #facet_wrap(~species,scales = "free")+ 
   ylab("Num fruits (log)")+ xlab("DOY mature flower") + ylim(0,3.5)+
   labs(colour="Treatment")+ guides(fill="none")
 
@@ -313,27 +361,43 @@ ggplot(subset(all_phen_long,trait_simple2=="repro_size"&phen=="first_flower_open
   geom_smooth(method='lm') + #scale_colour_viridis_b()+
   scale_fill_manual(values=specColor)+ scale_color_manual(values=specColor)+
   #geom_smooth(method='gam', formula= y ~ s(x, bs = "cs", fx = TRUE, k = 3)) + 
-  theme_bw()+#  facet_wrap(~species,scales = "free")+ 
+  theme_bw()+ facet_wrap(~species,scales = "free", nrow=2)+ 
   ylab("Reproductive size (mm) (log)")+ xlab("DOY mature flower")+ ylim(2,6.5)+
   labs(colour="Treatment")+ guides(fill="none")
 
 #flower time ~ veg growth
-ggplot(subset(all_phen_long,trait_simple2=="veg_growth"&phen=="first_flower_bud"),
-       aes(x=doy, y=log(value+1), fill=otc_treatment))+
+ggplot(subset(all_phen_long,trait_simple2=="veg_growth"&phen=="first_flower_open"),
+       aes(x=DOY, y=log(value+1), fill=otc_treatment))+
   geom_point(aes(colour=otc_treatment), alpha=0.5)+
   #geom_smooth(method = lm, formula = y ~ splines::bs(x, 3)) + #cubic spline
   geom_smooth(method='lm') + #scale_colour_viridis_b()+
   scale_fill_manual(values=specColor)+ scale_color_manual(values=specColor)+
   #geom_smooth(method='gam', formula= y ~ s(x, bs = "cs", fx = TRUE, k = 3)) + 
-  theme_bw()+ # facet_wrap(~species,scales = "free")+ 
+  theme_bw()+ facet_wrap(~species,scales = "free")+ 
   ylab("Stem growth (mm) (log)")+ xlab("DOY mature flower")+
   labs(colour="Treatment")+ guides(fill="none")
 
 
-#run mixed effects models 
+ggplot(subset(all_phen_long,trait_simple2=="veg_growth"&phen=="first_flower_open"),
+       aes(x=DOY, y=log(value+1), fill=otc_treatment))+
+  geom_point(aes(colour=otc_treatment), alpha=0.5)+
+  #geom_smooth(method = lm, formula = y ~ splines::bs(x, 3)) + #cubic spline
+  #geom_smooth(method='lm') + #scale_colour_viridis_b()+
+  scale_fill_manual(values=specColor)+ scale_color_manual(values=specColor)+
+  geom_smooth(method='gam', formula= y ~ s(x, bs = "cs", fx = TRUE, k = 2)) + 
+  theme_bw()+ #facet_wrap(~species,scales = "free")+ 
+  ylab("Stem growth (mm) (log)")+ xlab("DOY mature flower")+
+  labs(colour="Treatment")+ guides(fill="none")
+
+
+#run mixed effects models---- 
 #rename into site, subsite 
 all_phen_long<- rename(all_phen_long,subsite=site)%>%
   mutate(site=if_else(subsite=="DL", "Daring Lake", "Alexandra Fiord"))
+
+all_phen_long<-mutate(all_phen_long, expstart=case_when(site=="Daring Lake"~2001,
+                                              site=="Alexandra Fiord"~1992))%>%
+  mutate(yearswarm=year-expstart)
 
 all_phen<-pivot_wider(all_phen_long, names_from = phen, values_from = doy, values_fn = mean)%>% #almost all duplicated so values_fn=mean
   pivot_wider(., names_from = trait_simple2, values_from = value)
@@ -369,10 +433,9 @@ summary(lmer(log(veg_growth+1)~first_flower_open*otc_treatment + (1|species) + (
 ###Post ESA analyses----
 #Sep 1 2022
 
-#plot by site
-ggplot(subset(all_phen_long,trait_simple2!="leaf_no"&phen!="first_flower_shed"), 
-       aes(x=doy, y=log(value+1), fill=otc_treatment))+
-  geom_point(aes(colour=year, shape=site), alpha=0.5)+
+ggplot(all_phen_long, 
+       aes(x=DOY, y=log(value+1), fill=otc_treatment))+
+  geom_point(aes(colour=year), alpha=0.5)+
   #geom_smooth(method = lm, formula = y ~ splines::bs(x, 3)) + #cubic spline
   geom_smooth(method='lm') + scale_fill_manual(values=specColor)+ #scale_color_manual(values=specColor)+
   scale_color_viridis_c()+
@@ -380,10 +443,8 @@ ggplot(subset(all_phen_long,trait_simple2!="leaf_no"&phen!="first_flower_shed"),
   theme_bw()+  facet_wrap(~trait_simple2+ phen,scales = "free")+ 
   ylab("trait value (log)")+ xlab("phen DOY")
 
-#year pattern is conflated with site for several measurements 
-#probably need to analyze sites separately or have site and year as random effects 
-#try models again with year 
-
+#calculate years warming
+#need to adjust for alex missing years***
 all_phen<-mutate(all_phen, expstart=case_when(site=="Daring Lake"~2001,
                                               site=="Alexandra Fiord"~1992))%>%
   mutate(yearswarm=year-expstart)
@@ -391,9 +452,6 @@ all_phen<-mutate(all_phen, expstart=case_when(site=="Daring Lake"~2001,
 #flower #
 summary(lmer(log(flower_no+1)~first_flower_open*otc_treatment*yearswarm + (1|species) + (1|site) + (1|subsite)+ (1|year), all_phen))
 #flowering time negative, OTC negative, interaction positive
-#years warm highly correlates with first flower open
-#Because DL has both more recent coverage in years and earlier flowering (naturally)
-
 
 #fruit # 
 summary(lmer(log(fruit_no+1)~first_flower_open*otc_treatment + (1|species) + (1|species) + (1|site:year) + (1|year) , all_phen))
@@ -409,7 +467,38 @@ summary(lmer(log(veg_growth+1)~first_flower_bud*otc_treatment + (1|species) + (1
                                               optCtrl  = list(method="nlminb")), all_phen))
 #flowering time negative, OTC positive, interaction negative  
 
-dl<-subset(all_phen_long, site=="Daring Lake")
-af<-subset(all_phen_long, site=="Alexandra Fiord")
-unique(dl$year)
-unique(af$year)
+
+#Look at non-linearity----
+ggplot(subset(all_phen_long,trait_simple2!="leaf_no"&phen!="first_flower_shed"), 
+       aes(x=DOY, y=log(value+1), fill=otc_treatment))+
+  geom_point(aes(colour=otc_treatment), alpha=0.5)+
+  geom_smooth(method = lm, formula = y ~ splines::bs(x, 2)) + #splines
+  #geom_smooth(method='lm') 
+  scale_fill_manual(values=specColor)+ scale_color_manual(values=specColor)+
+  #scale_color_viridis_c()+
+  #geom_smooth(method='gam', formula= y ~ s(x, bs = "cs", fx = TRUE, k = 3)) + 
+  theme_bw()+  facet_wrap(~trait_simple2+ phen,scales = "free")+ 
+  ylab("trait value (log)")+ xlab("phen DOY")
+#some are non-linear
+ggplot(subset(all_phen_long,trait_simple2=="veg_growth"&phen=="first_flower_bud"), 
+       aes(x=DOY, y=log(value+1), fill=otc_treatment))+
+  geom_point(aes(colour=otc_treatment), alpha=0.5)+
+  #geom_smooth(method = lm, formula = y ~ splines::bs(x, 2)) + #splines
+  geom_smooth(method='lm', lty=2) +
+  scale_fill_manual(values=specColor)+ scale_color_manual(values=specColor)+
+  #scale_color_viridis_c()+
+  geom_smooth(method='gam', formula= y ~ s(x, bs = "cs", fx = TRUE, k = 2)) + 
+  theme_bw()+  facet_wrap(~trait_simple2+ phen,scales = "free")+ 
+  ylab("trait value (log)")+ xlab("phen DOY")
+
+ggplot(subset(all_phen_long,trait_simple2=="flower_no"&phen=="first_flower_open"), 
+       aes(x=doy, y=log(value+1), fill=otc_treatment))+
+  geom_point(aes(colour=otc_treatment), alpha=0.5)+
+#  geom_smooth(method = lm, formula = y ~ splines::bs(x, 2)) + #splines
+  geom_smooth(method='lm', lty=2) +
+  scale_fill_manual(values=specColor)+ scale_color_manual(values=specColor)+
+  #scale_color_viridis_c()+
+  geom_smooth(method='gam', formula= y ~ s(x, bs = "cs", fx = TRUE, k = 2)) + 
+  theme_bw()+  facet_wrap(~trait_simple2+ phen,scales = "free")+ 
+  ylab("trait value (log)")+ xlab("phen DOY")
+
