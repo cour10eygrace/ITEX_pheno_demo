@@ -399,12 +399,9 @@ TRUE~phen_stage))
 #create DOY standardized off snow free dates----
 sf<-filter(phen_dem, phen_stage=="obs snow free")%>%select(year, species,plant_id, treatment, DOY)%>%distinct(.)%>%rename(sfDOY=DOY)
 
-phen_dem<-filter(phen_dem, phen_stage!="obs snow free")%>%left_join(., sf)%>%
-  mutate(DOY_std=DOY-sfDOY)
+phen_dem<-filter(phen_dem, phen_stage!="obs snow free")
 
-hist(phen_dem$DOY_std)# about 1100 observations before snow free date- possible? 
-
-save(phen_dem, file='data/DLphen_w_priorvisit.Rdata')
+save(phen_dem, sf, file='data/DLphen_w_priorvisit.Rdata')
 #load('data/DLphen_w_priorvisit.Rdata')
 
 
