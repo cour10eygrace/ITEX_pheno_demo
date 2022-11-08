@@ -269,7 +269,6 @@ dead_check<-select(phen_dem, year, plantid,Notes, species, treatment)%>%filter(g
 #oxytropis 261 died 2014, retagged 261a, not remeasured until 2019 
 
 #for now, let's just remove the unresolved dead ids
-
 dead_check<-select(dead_check, plantid, species)%>%
     filter(plantid!="1"& plantid!="2"& plantid!="1a"& plantid!="2a"& plantid!="106a"& plantid!="134a"& plantid!="130a"&
              plantid!="261"& plantid!="261a")
@@ -287,17 +286,17 @@ phen_dem<-filter(phen_dem, !is.na(plantid))
 #throw out all 2020 data? too many zeroes and missing data... inconsistent coverage across spp 
 #phen_dem<-subset(phen_dem, year!=2020)
 
-#pull the data back wide -use censored DOYs standardized off snowmelt in each plot, yr)
-phen_demw<-select(phen_dem, species, year, plantid, treatment, phen_stage, DOY_std,trait, value,measurement_rep)%>%
+#pull the data back wide -use censored DOYs 
+phen_demw<-select(phen_dem, species, year, plantid, treatment, phen_stage, DOY, trait, value,measurement_rep)%>%
   group_by(species, year, plantid, treatment)%>%
-  pivot_wider(names_from = "phen_stage", values_from="DOY_std")%>%
+  pivot_wider(names_from = "phen_stage", values_from="DOY")%>%
   pivot_wider(names_from = c("trait", "measurement_rep"), values_from="value")%>%distinct(.)
 
 #remove spaces from names phenology
 names(phen_demw) <- gsub(" ", "_", names(phen_demw))
 
 #reorder cols by measurement
-phen_demw<-select(phen_demw, species,year,plantid,treatment,first_flower_bud,first_flower_open,                 
+phen_demw<-select(phen_demw, species,year,plantid,treatment, first_flower_bud,first_flower_open,                 
 first_leaf,first_petal_shed, seed_shed, last_petal_shed, first_flower_shed, first_fruit_visible,               
 last_flower_shed, first_catkin_female, first_leaf_shed,first_leaf_turn,first_catkin_male,first_stigma,                       
 last_leaf_turn,pollen_shed,first_anther,last_leaf_shed, num_flowers_1,num_fruit_1,                       
@@ -408,5 +407,5 @@ phen_demw$flowering_stalk_length_mm_late_1[phen_demw$species=="eriophorum"&phen_
 #leaf length > 0
 phen_demw$leaf_length_mm_3[phen_demw$species=="carex"&phen_demw$leaf_length_mm_3==0]=NA_real_ 
 
-save(phen_demw, file='data/DLphen_w_demog_all.Rdata')
+save(phen_demw, sf, file='data/DLphen_w_demog_all.Rdata')
 #load(file='data/DLphen_w_demog_all.Rdata')
