@@ -397,7 +397,6 @@ TRUE~phen_stage))
 
 
 #create DOY standardized off snow free dates----
-#for comparison with Alex
 sf<-filter(phen_dem, phen_stage=="obs snow free")%>%select(year, species,plant_id, treatment, DOY)%>%distinct(.)%>%rename(sfDOY=DOY)
 
 phen_dem<-filter(phen_dem, phen_stage!="obs snow free")%>%left_join(., sf)%>%

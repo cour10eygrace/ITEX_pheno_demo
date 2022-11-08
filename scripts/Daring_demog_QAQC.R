@@ -287,11 +287,11 @@ phen_dem<-filter(phen_dem, !is.na(plantid))
 #throw out all 2020 data? too many zeroes and missing data... inconsistent coverage across spp 
 #phen_dem<-subset(phen_dem, year!=2020)
 
-#pull the data back wide -use averaged DOYs 
-phen_demw<-select(phen_dem, species, year, plantid, treatment, phen_stage, DOY,trait, value,measurement_rep)%>%
+#pull the data back wide -use censored DOYs standardized off snowmelt in each plot, yr)
+phen_demw<-select(phen_dem, species, year, plantid, treatment, phen_stage, DOY_std,trait, value,measurement_rep)%>%
   group_by(species, year, plantid, treatment)%>%
-  pivot_wider(names_from = "phen_stage", values_from="DOY")%>%
-  pivot_wider(names_from = c("trait","measurement_rep"), values_from="value")%>%distinct(.)
+  pivot_wider(names_from = "phen_stage", values_from="DOY_std")%>%
+  pivot_wider(names_from = c("trait", "measurement_rep"), values_from="value")%>%distinct(.)
 
 #remove spaces from names phenology
 names(phen_demw) <- gsub(" ", "_", names(phen_demw))
