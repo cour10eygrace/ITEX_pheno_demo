@@ -396,12 +396,13 @@ TRUE~phen_stage))
 #  facet_wrap(~phen_stage+treatment, scales="free")+ theme_bw()
 
 
-#create DOY standardized off snow free dates----
+#put snow free dates in separate column ----
 sf<-filter(phen_dem, phen_stage=="obs snow free")%>%select(year, species,plant_id, treatment, DOY)%>%distinct(.)%>%rename(sfDOY=DOY)
 
 phen_dem<-filter(phen_dem, phen_stage!="obs snow free")
+phen_dem<-left_join(phen_dem, sf)
 
-save(phen_dem, sf, file='data/DLphen_w_priorvisit.Rdata')
+save(phen_dem, file='data/DLphen_w_priorvisit.Rdata')
 #load('data/DLphen_w_priorvisit.Rdata')
 
 

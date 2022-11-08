@@ -286,6 +286,9 @@ phen_dem<-filter(phen_dem, !is.na(plantid))
 #throw out all 2020 data? too many zeroes and missing data... inconsistent coverage across spp 
 #phen_dem<-subset(phen_dem, year!=2020)
 
+#pull out sf data into separate df (merge back later)
+sf<-select(phen_dem, year, species,plantid, treatment, sfDOY)%>%distinct(.)
+
 #pull the data back wide -use censored DOYs 
 phen_demw<-select(phen_dem, species, year, plantid, treatment, phen_stage, DOY, trait, value,measurement_rep)%>%
   group_by(species, year, plantid, treatment)%>%
