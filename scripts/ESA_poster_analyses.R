@@ -21,6 +21,7 @@ specColor <- c(
 load(file='data/alex_cleaned_phen.Rdata')
 
 #OR with prior visit censored (averaged) DOYs 
+##NOT USING CURRENTLY bc no dates with ranges 11/2/22 
 #load(file='data/alex_cleaned_phen_censored.Rdata')
 
 #select columns of interest 
@@ -48,22 +49,36 @@ alex_phen2_long<-pivot_longer(alex_phen2, cols = all_of(phen_colsx),
                   names_to = "trait", values_to = "value")%>%
                 filter(!is.na(doy))%>%
                 filter(!is.na(value))
+
 #renaming sheet
+#used this to decide which traits to use
+#took trait(s) with best coverage for each spp-traitsimple2
+#and/or the measurement with the best/most data for a given spp 
 #alex_cts<-group_by(alex_phen2_long, species, trait)%>%summarise(ct=n())
 #write.csv(alex_cts, 'data/traits_AF.csv')
 
 traitsAF<-read.csv("data/traits_AF.csv")
 alex_phen2_long<-left_join(alex_phen2_long, traitsAF)%>%select(-ct)       
 
-#std normalize doys within each year
-#can do this with snowmelt date also...
-alex_phen2_long<-group_by(alex_phen2_long, year)%>%mutate(avg=mean(doy), sd=sd(doy))%>%
-                                                            mutate(DOY=(doy-avg)/sd)
+#std normalize flower open doys within each year
+#doing this with snowmelt date-TBD
+alex_phen2_long<-filter(alex_phen2_long, phen=="pheno_flower_mature_first")%>%group_by(year)%>%mutate(avg=mean(doy), sd=sd(doy))%>%
+                                                          mutate(DOY=(doy-avg)/sd)%>%select(-avg, -sd)
 hist(alex_phen2_long$DOY)
 
 
 
 #plot_all----
+#trait simple
+ggplot(alex_phen2_long,
+       aes(x=doy, y=log(value+1), fill=otc_treatment))+
+  geom_point(aes(colour=factor(otc_treatment)), alpha=0.5)+
+  #geom_smooth(method = lm, formula = y ~ splines::bs(x, 3)) + #cubic spline
+  geom_smooth(method='lm') + scale_fill_manual(values=specColor)+ scale_color_manual(values=specColor)+
+  #geom_smooth(method='gam', formula= y ~ s(x, bs = "cs", fx = TRUE, k = 3)) + 
+  theme_bw()+  facet_wrap(~trait_simple+phen,scales = "free")+ 
+  ylab("trait value (log)")+ xlab("phen DOY")
+#trait simple2
 ggplot(alex_phen2_long,
        aes(x=doy, y=log(value+1), fill=otc_treatment))+
   geom_point(aes(colour=factor(otc_treatment)), alpha=0.5)+
@@ -196,7 +211,7 @@ daring_phen2<-select(daring_phen, species, year, plantid, treatment, first_flowe
                      num_fruit_1, growth_inc_mm_1, growth_inc_mm_2, growth_inc_mm_3,
                      flowering_stalk_length_mm_early_1, flowering_stalk_length_mm_late_1)
                      
-phen_colsx<-c("first_flower_bud","first_anther", "first_flower_open")
+phen_colsx<-c("first_flower_bud","first_anther", "first_flower_open", "first_flower_shed")
 trait_colsx<-c("num_flowering_stalks_1","num_flowers_per_stalk_1", "num_flowers_1",
                 "num_fruit_per_stalk_1", "num_fruit_1",
                  "growth_inc_mm_1", "growth_inc_mm_2", "growth_inc_mm_3",
@@ -211,8 +226,8 @@ daring_phen2_long<-pivot_longer(daring_phen2, cols = all_of(phen_colsx),
   filter(!is.na(value))
 
 
-#std normalize doys within each year
-daring_phen2_long<-group_by(daring_phen2_long, year)%>%mutate(avg=mean(doy), sd=sd(doy))%>%
+#std normalize doys within each phenophase x year
+daring_phen2_long<-group_by(daring_phen2_long, year, phen)%>%mutate(avg=mean(doy), sd=sd(doy))%>%
   mutate(DOY=(doy-avg)/sd)
 hist(daring_phen2_long$DOY)
 
@@ -236,16 +251,19 @@ daring_phen2_long<-left_join(daring_phen2_long, traitsDL)%>%select(-ct)
 names(alex_phen2_long)
 names(daring_phen2_long)
 
-
-#combine dfs??
-daring_phen2_long$site<-"DL"
-daring_phen2_long$plot<-NA
 daring_phen2_long$year<-as.numeric(as.character(daring_phen2_long$year))
 daring_phen2_long<-rename(daring_phen2_long, plant_id=plantid, otc_treatment=treatment)
 alex_phen2_long<-select(alex_phen2_long, -snow_treatment, -fert_treatment, -trait_simple)
 
 daring_phen2_long<-select(daring_phen2_long, 
-  site, plot, year, species, plant_id, otc_treatment, phen, doy, DOY, trait, value, trait_simple2)
+   year, species, plant_id, otc_treatment, phen, doy, DOY, trait, value, trait_simple2)
+#load plot numbers dl
+plots<-read.csv("data/Daring_raw_data/plantidmaps.csv")
+daring_phen2_long<-left_join(daring_phen2_long, plots)
+daring_phen2_long$plot<-as.character(as.numeric(daring_phen2_long$plot))
+sort(names(alex_phen2_long))
+sort(names(daring_phen2_long))
+
 #rename first anther to first flower open to match other daring spp 
 daring_phen2_long<- mutate(daring_phen2_long,
                            phen=if_else(phen=="first_anther", "first_flower_open", phen))
@@ -265,14 +283,14 @@ all_phen_long<- mutate(all_phen_long, phen=case_when(
 all_phen_long<-subset(all_phen_long,trait_simple2!="")
 
 #plot all----
-ggplot(subset(all_phen_long,phen!="first_flower_shed"& trait_simple2!="leaf_no"),
+ggplot(subset(all_phen_long),
        aes(x=DOY, y=log(value+1), fill=otc_treatment))+
   geom_point(aes(colour=factor(otc_treatment)), alpha=0.5)+
   #geom_smooth(method = lm, formula = y ~ splines::bs(x, 3)) + #cubic spline
-  #geom_smooth(method='lm') +
+  geom_smooth(method='lm') +
   scale_fill_manual(values=specColor)+ scale_color_manual(values=specColor)+
-  geom_smooth(method='gam', formula= y ~ s(x, bs = "cs", fx = TRUE, k = 2)) + 
-  theme_bw()+  facet_wrap(~trait_simple2 + phen ,scales = "free", nrow = 2)+ 
+  #geom_smooth(method='gam', formula= y ~ s(x, bs = "cs", fx = TRUE, k = 2)) + 
+    theme_bw()+  facet_wrap(~trait_simple2 + phen + site ,scales = "free", nrow = 2)+ 
   ylab("trait value (log)")+ xlab("phen DOY")
 
 #plot by year
@@ -318,16 +336,6 @@ ggplot(subset(all_phen_long, site=="Daring Lake"),
   theme_bw()+  facet_wrap(~trait_simple2+ phen,scales = "free")+ 
   ylab("trait value (log)")+ xlab("phen DOY")
 
-#subset for those with full time span observed 
-ggplot(subset(all_phen_long,trait_simple2!="leaf_no"&phen!="first_flower_shed"), 
-       aes(x=DOY, y=log(value+1), fill=otc_treatment))+
-  geom_point(aes(colour=year), alpha=0.5)+
-  #geom_smooth(method = lm, formula = y ~ splines::bs(x, 3)) + #cubic spline
-  geom_smooth(method='lm') + scale_fill_manual(values=specColor)+ #scale_color_manual(values=specColor)+
-  scale_color_viridis_c()+
-  #geom_smooth(method='gam', formula= y ~ s(x, bs = "cs", fx = TRUE, k = 3)) + 
-  theme_bw()+ # facet_wrap(~phen+ trait_simple2,scales = "free")+ 
-  ylab("trait value (log)")+ xlab("phen DOY")
 
 #flower time ~ flower #
 ggplot(subset(all_phen_long,trait_simple2=="flower_no"&phen=="first_flower_open"),
@@ -393,22 +401,27 @@ ggplot(subset(all_phen_long,trait_simple2=="veg_growth"&phen=="first_flower_open
 #run mixed effects models---- 
 #rename into site, subsite 
 all_phen_long<- rename(all_phen_long,subsite=site)%>%
-  mutate(site=if_else(subsite=="DL", "Daring Lake", "Alexandra Fiord"))
+  mutate(site=if_else(subsite=="B"|subsite=="F", "Daring Lake", "Alexandra Fiord"))%>%
+relocate(site, .before=year)%>%
+  relocate(subsite, .after = site)%>%
+relocate(plot,.after = subsite)
+
 
 all_phen_long<-mutate(all_phen_long, expstart=case_when(site=="Daring Lake"~2001,
                                               site=="Alexandra Fiord"~1992))%>%
   mutate(yearswarm=year-expstart)
 
+#PIVOT BACK WIDE
 all_phen<-pivot_wider(all_phen_long, names_from = phen, values_from = doy, values_fn = mean)%>% #almost all duplicated so values_fn=mean
-  pivot_wider(., names_from = trait_simple2, values_from = value)
+  pivot_wider(., names_from = trait_simple2, values_from = value) #leave these-will become NAs below
 all_phen$flower_no<-as.numeric(as.character(all_phen$flower_no))
 all_phen$fruit_no<-as.numeric(as.character(all_phen$fruit_no))
 all_phen$veg_growth<-as.numeric(as.character(all_phen$veg_growth))
 all_phen$repro_size<-as.numeric(as.character(all_phen$repro_size))
 all_phen$leaf_no<-as.numeric(as.character(all_phen$leaf_no))
 all_phen$first_flower_open<-as.numeric(as.character(all_phen$first_flower_open))
-all_phen$first_flower_bud<-as.numeric(as.character(all_phen$first_flower_bud))
-all_phen$first_flower_shed<-as.numeric(as.character(all_phen$first_flower_shed))
+#all_phen$first_flower_bud<-as.numeric(as.character(all_phen$first_flower_bud))
+#all_phen$first_flower_shed<-as.numeric(as.character(all_phen$first_flower_shed))
 
 hist(log(all_phen$year))
 hist(all_phen$first_flower_open)
