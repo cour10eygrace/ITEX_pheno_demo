@@ -12,7 +12,9 @@ source('scripts/utility_functions_all.R')
 
 
 # -- READ PHENOLOGY DATA ----
-excelfile='data/Daring_raw_data/2021 ITEX multi-year phenology.xlsx' #RAW data from Karin Clark with Pivot table removed (version 8/26/21)
+#excelfile='data/Daring_raw_data/2021 ITEX multi-year phenology.xlsx' #RAW data from Karin Clark with Pivot table removed (version 8/26/21)
+excelfile='data/Daring_raw_data/2022 ITEX multi-year phenology.xlsx' #RAW data from Karin Clark with Pivot table removed (version 11/14/22)
+
 sheets=excel_sheets(excelfile)
 
 new_data=list()

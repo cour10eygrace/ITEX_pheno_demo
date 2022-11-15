@@ -14,7 +14,6 @@ load('data/DLphen_w_priorvisit.Rdata')
 
 #rename traits and add replicate info #Issue #3---- 
 trait_names<-read.csv("data/traits_DL.csv")
-
 phen_dem<-left_join(phen_dem, trait_names)%>%select(-trait)%>%rename(trait=trait_new)%>%relocate(value, .after=trait)
 
 
@@ -75,8 +74,8 @@ ggplot(filter(phen_dem,grepl("growth|mm|length|diam|width", trait)),aes(y=value,
 #eriophorum stalk length late 2007, 2010 (CTL only), 2011, 2012, 2015
 #eriophorum leaf_length 2011, 2012, 2015
 #ledum growth inc 2008, 2009, 2010, 2012
-#oxytropis width 2008, 2009, 2012
-#oxytropis length 2008, 2009, 2012, 2017
+#oxytropis width 2008, 2009, 2012, 2022
+#oxytropis length 2008, 2009, 2012, 2017, 2022
 #salix growth inc 2010
 #salix catkin length 2010, 2017
 #saxifraga diameter 2010, 2011, 2012, 2014, 2017
@@ -125,10 +124,12 @@ mutate(need_fix=case_when(species=="betula"& trait=="growth_inc_mm" & year==2009
                           species=="oxytropis"& trait=="width_mm" & year==2008~"Y",
                           species=="oxytropis"& trait=="width_mm" & year==2009~"Y",
                           species=="oxytropis"& trait=="width_mm" & year==2012~"Y",
+                          species=="oxytropis"& trait=="width_mm" & year==2022~"Y",
                           species=="oxytropis"& trait=="length_mm" & year==2008~"Y",
                           species=="oxytropis"& trait=="length_mm" & year==2009~"Y",
                           species=="oxytropis"& trait=="length_mm" & year==2012~"Y",
                           species=="oxytropis"& trait=="length_mm" & year==2017~"Y",
+                          species=="oxytropis"& trait=="length_mm" & year==2022~"Y",
                           species=="salix"& trait=="growth_inc_mm" & year==2010~"Y",
                           species=="salix"& trait=="length_mature_female_catkins_mm" & year==2010~"Y",
                           species=="salix"& trait=="length_mature_female_catkins_mm" & year==2017~"Y",
@@ -150,6 +151,9 @@ mutate(need_fix=case_when(
 species=="salix"& trait=="leaf_length_mm" & year==2011& plant_id=='100'~"Y",
 species=="salix"& trait=="leaf_length_mm" & year==2011& plant_id=='101'~"Y",
 species=="salix"& trait=="leaf_length_mm" & year==2011& plant_id=='102'~"Y",              
+species=="salix"& trait=="leaf_length_mm" & year==2021& plant_id=='116a'~"Y",              
+species=="salix"& trait=="leaf_length_mm" & year==2022& plant_id=='111a'~"Y",   
+species=="salix"& trait=="leaf_length_mm" & year==2022& plant_id=='115a'~"Y",   
 plant_id=='319'&species=="carex"&year==2017& trait=="flowering_stalk_length_mm"~"Y", 
 plant_id=='316'&species=="carex"&year==2017& trait=="flowering_stalk_length_mm"~"Y", 
 plant_id=='1'&species=="eriophorum"&year==2009&trait=="leaf_length_mm"& treatment=="CTL"~"Y", TRUE~need_fix))
@@ -237,7 +241,7 @@ checkIDs<- group_by(phen_dem,species, treatment, plantid)%>%
   group_by(species, treatment, plantid, count) %>%
   summarise(year = paste(year, collapse = ","))%>%
   separate(year, into = c('y1', 'y2', 'y3', 'y4', 'y5', 'y6', 'y7', 'y8', 'y9', 'y10', 
-                          'y11', 'y12', 'y13', 'y14', 'y15', 'y16', 'y17', 'y18', 'y19', 'y20', 'y21'))
+                          'y11', 'y12', 'y13', 'y14', 'y15', 'y16', 'y17', 'y18', 'y19', 'y20', 'y21', 'y22'))
 
 check2<-read.csv('data/plantids_DL.csv') #notes from manually checking all ids 2/22/22
 checkIDs<-left_join(checkIDs, check2)%>%relocate(Notes, .after=count)
@@ -346,6 +350,9 @@ phen_demw$num_fruit_1[phen_demw$species=="oxytropis"&phen_demw$num_flowers_1==0]
 phen_demw$length_mm_1[phen_demw$species=="oxytropis"&is.na(phen_demw$width_mm_1)]=NA_real_ 
 #if num fruit(pods)=0 but num flowers and phenology NA, num pods NA 
 phen_demw$num_fruit_1[phen_demw$species=="oxytropis"&phen_demw$num_fruit_1==0&is.na(phen_demw$num_flowers_1)&is.na(phen_demw$first_flower_bud)]=NA_real_ 
+#diameter must be >0 
+phen_demw$diameter_mm_1[phen_demw$species=="oxytropis"&phen_demw$length_mm_1==0]=NA_real_ 
+phen_demw$diameter_mm_1[phen_demw$species=="oxytropis"&phen_demw$width_mm_1==0]=NA_real_ 
 
 
 #ledum 
@@ -354,6 +361,7 @@ phen_demw$num_fruit_1[phen_demw$species=="oxytropis"&phen_demw$num_fruit_1==0&is
 #flowers counted after open
 #can you have zero flowering stalks- Karin says no, throw them out 
 #if num flowering stalks=0,NA fill rest with NA 
+#flower and fruit counts past first stalk very inconsistent across years...not usng... 
 phen_demw$num_flowers_per_stalk_1[phen_demw$species=="ledum"&phen_demw$num_flowering_stalks_1==0]=NA_real_
 phen_demw$num_fruit_per_stalk_1[phen_demw$species=="ledum"&phen_demw$num_flowering_stalks_1==0]=NA_real_
 phen_demw$num_flowering_stalks_1[phen_demw$species=="ledum"&phen_demw$num_flowering_stalks_1==0]=NA_real_
@@ -402,9 +410,11 @@ phen_demw$diameter_mm_3[phen_demw$species=="saxifraga"&phen_demw$diameter_mm_3==
 #eriophorum 
 #diameter must be >0 
 phen_demw$diameter_mm_1[phen_demw$species=="eriophorum"&phen_demw$diameter_mm_1==0]=NA_real_ 
-# length of stalks > NA
+# length of stalks cannot be 0
 phen_demw$flowering_stalk_length_mm_early_1[phen_demw$species=="eriophorum"&phen_demw$flowering_stalk_length_mm_early_1==0]=NA_real_ 
 phen_demw$flowering_stalk_length_mm_late_1[phen_demw$species=="eriophorum"&phen_demw$flowering_stalk_length_mm_late_1==0]=NA_real_ 
+
+
 
 #carex-no zeroes 
 #leaf length > 0
