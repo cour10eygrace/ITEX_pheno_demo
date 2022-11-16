@@ -8,10 +8,10 @@ library(ggplot2)
 #pull in all hobo data and collapse into one df 
 dir_path <- 'C:/Users/court/Documents/Git/ITEX_pheno_demo/data/Daring_raw_data/HOBOs/'
 file_pattern <- '.csv' # regex pattern to match the file name format
-#file_name<-'New logger S_N_419747 TEMP_TEMP 0007.csv'
+#file_name<-'New logger S_N#460331 TEMP_TEMP 0007.csv'
 
 clean_hobo <- function(dir_path, file_name){
-  read.csv2(paste0(dir_path, file_name), col.names = "all") %>% 
+    read.csv2(paste0(dir_path, file_name), col.names = "all") %>% 
     mutate(logger=all[1])%>%
     slice(-1)%>%
     type_convert()%>%
@@ -22,14 +22,43 @@ clean_hobo <- function(dir_path, file_name){
     mutate(year=as.numeric(year))%>%
     separate(logger, into = c("y", "logger"), sep = "/", remove = F)%>%
     mutate(logger=parse_number(logger, trim_ws = T))%>%
-    select(-x, -y)
+    select(-x,-y) 
 }
 
 hobo_cleaned_all <- 
   list.files(dir_path, pattern = file_pattern, recursive = T) %>% 
   map_df(~ clean_hobo(dir_path, .))
 
-#save(hobo_cleaned_all, file='data/Hobo_cleaned_allyears.Rdata')
+
+#deal with 2019 hobo data in excel files 
+library(readxl)
+dir_path <- 'C:/Users/court/Documents/Git/ITEX_pheno_demo/data/Daring_raw_data/HOBOs/2019/'
+file_pattern <- '.xlsx' 
+
+clean_hobo_2019 <- function(dir_path, file_name){
+  readxl::read_xlsx(paste0(dir_path, file_name))%>% 
+    mutate(logger=...10[1])%>%
+    mutate(logger=parse_number(logger, trim_ws = T))%>%
+    select(!contains("*F"))%>%
+    rename(datetime="Date/Time")%>%
+    mutate(Date=mdy_hms(datetime))%>%
+    rename(T1="Temperature (*C) c:1", T2HR="High-Res Temp (*C) c:1 2", T3= "Temperature (*C) c:3", T4HR="High-Res Temp (*C) c:3 4")%>%
+    mutate(doy=yday(Date))%>%
+    separate(Date,into=c("Date","Time"), sep = " ")%>%
+    separate(Date, into = "year", remove = F)%>%
+    mutate(year=as.numeric(year))%>%
+    select(Date, year, Time, T1, T2HR, T3, T4HR, doy, logger) 
+    
+}
+
+
+hobo_cleaned_2019 <- 
+  list.files(dir_path, pattern = file_pattern) %>% 
+  map_df(~ clean_hobo_2019(dir_path, .))
+
+hobo_cleaned_all<-rbind(hobo_cleaned_all, hobo_cleaned_2019)
+
+save(hobo_cleaned_all, file='data/Hobo_cleaned_allyears.Rdata')
 #load(file='data/Hobo_cleaned_allyears.Rdata')
 
 #calculate daily averages across 4 temp readings 
@@ -45,7 +74,7 @@ map<-read.csv("data/Daring_raw_data/hobomaps.csv") #need to update with Eriophor
 #merge and calculate daily vals
 #for now remove missing eriophorum loggers 
 hobo_daily<-left_join(hobo_cleaned_all, map)%>%filter(!is.na(otc_treatment))%>%
-  group_by(year, doy,otc_treatment)%>% mutate(avgT_day=mean(as.numeric(T2HR)), na.rm=T)%>%
+  group_by(year, doy,otc_treatment)%>% mutate(avgT_day=mean(as.numeric(T1)), na.rm=T)%>%
    select(year, doy, avgT_day, otc_treatment, site)%>%distinct(.)
 
 #plot
