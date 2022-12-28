@@ -290,7 +290,7 @@ phen_dem<-filter(phen_dem, !is.na(plantid))
 #throw out all 2020 data? too many zeroes and missing data... inconsistent coverage across spp 
 #phen_dem<-subset(phen_dem, year!=2020)
 
-#pull out sf data into separate df (merge back later)
+#pull out snow free data into separate df (merge back later)
 sf<-select(phen_dem, year, species,plantid, treatment, sfDOY)%>%distinct(.)
 
 #pull the data back wide -use censored DOYs 

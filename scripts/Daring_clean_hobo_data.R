@@ -71,10 +71,10 @@ map<-read.csv("data/Daring_raw_data/hobomaps.csv") #need to update with Eriophor
 #plantids$plant_id<-as.character(plantids$plant_id)
 #plantids$plot<-as.character(as.integer(plantids$plot))
 
-#merge and calculate daily vals
+#merge and calculate daily vals by site x treatment 
 #for now remove missing eriophorum loggers 
 hobo_daily<-left_join(hobo_cleaned_all, map)%>%filter(!is.na(otc_treatment))%>%
-  group_by(year, doy,otc_treatment)%>% mutate(avgT_day=mean(as.numeric(T1)), na.rm=T)%>%
+  group_by(Date,otc_treatment, site)%>% mutate(avgT_day=mean(as.numeric(T1), na.rm=T))%>%
    select(year, doy, avgT_day, otc_treatment, site)%>%distinct(.)
 
 #plot
@@ -111,11 +111,15 @@ ggplot(hobo_dailyw, aes(x=doy, y=Tdiff, fill=as.factor(year)))+
 hist(hobo_dailyw$Tdiff)
 mean(hobo_dailyw$Tdiff, na.rm=T) #0.3 deg C warming 
 median(hobo_dailyw$Tdiff, na.rm=T) #0.2 deg C warming 
-sd(hobo_dailyw$Tdiff, na.rm=T)#0.39
-outlier<-0.3+(3*0.4)
+sd(hobo_dailyw$Tdiff, na.rm=T)#0.43
+#outlier<-0.3+(3*0.43)
 
 
 save(hobo_dailyw, file="data/hobo_daily_allyears.Rdata")
+
+
+#overall relationship
+summary(lm(OTC~CTL, hobo_dailyw))
 
 #filter outliers
 #hobo_dailyw<-filter(hobo_dailyw, Tdiff<outlier)
