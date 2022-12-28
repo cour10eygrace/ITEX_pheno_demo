@@ -155,6 +155,7 @@ save(alex_phen, file='data/alex_cleaned_phen.Rdata')
 
 
 # -- ASSIGN PRIOR VISITS ----
+##NOT USING CURRENTLY bc no dates with ranges listed 
 #pull out all observation dates for each year x site
 obsdates <- alex_phen_long %>% select(year, site, doy) %>% distinct()
 # reassign names
@@ -223,6 +224,18 @@ alex_traits<-pivot_wider(alex_trait_long, names_from = "trait", values_from = "v
                          values_fn=mean) 
 #181 obs not uniquely identified - mostly Luzula , take average 
 alex_phen<-left_join(alex_phen2, alex_traits)
-  
+
 save(alex_phen, file='data/alex_cleaned_phen_censored.Rdata')
+
+
+
+####create DOY standardized off snow free dates----
+#for comparison with DL
+#read in data available
+sfx<-read.csv("data/snowfree_data.csv")
+alexsf<-subset(sfx, site_name=="ALEXFIORD")%>%
+  separate(., subsite, into = c("x", "site", "y"))%>%select(-x,-y, -OTCWinterRemoval, -OTC_period)
+#read in additional years (raw)
+sfy<-read.csv("data/Alex_raw_data/snow/compiled_claude_snow_depth.csv")%>%
+  select(.,year, Snow_melt_day)%>%distinct(.)%>%filter(year>2012)
 
