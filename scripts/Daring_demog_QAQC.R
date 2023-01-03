@@ -362,15 +362,16 @@ phen_demw$diameter_mm_1[phen_demw$species=="oxytropis"&phen_demw$width_mm_1==0]=
 #can you have zero flowering stalks- Karin says no, throw them out 
 #if num flowering stalks=0,NA fill rest with NA 
 #flower and fruit counts past first stalk very inconsistent across years...not usng... 
-phen_demw$num_flowers_per_stalk_1[phen_demw$species=="ledum"&phen_demw$num_flowering_stalks_1==0]=NA_real_
-phen_demw$num_fruit_per_stalk_1[phen_demw$species=="ledum"&phen_demw$num_flowering_stalks_1==0]=NA_real_
+#only keep individuals with 1 flowering stalk (or zero)
 phen_demw$num_flowering_stalks_1[phen_demw$species=="ledum"&phen_demw$num_flowering_stalks_1==0]=NA_real_
+phen_demw$num_flowering_stalks_1[phen_demw$species=="ledum"&phen_demw$num_flowering_stalks_1>1]=NA_real_
 phen_demw$num_flowers_per_stalk_1[phen_demw$species=="ledum"&is.na(phen_demw$num_flowering_stalks_1)]=NA_real_
 phen_demw$num_fruit_per_stalk_1[phen_demw$species=="ledum"&is.na(phen_demw$num_flowering_stalks_1)]=NA_real_
 
 #remove 2020-no data
 phen_demw<-unite(phen_demw, speciesyr, species, year, remove=F)%>%filter(speciesyr!="ledum_2020")%>%
   select(-speciesyr)
+
 
 #vaccinium
 #can flower but not fruit  
