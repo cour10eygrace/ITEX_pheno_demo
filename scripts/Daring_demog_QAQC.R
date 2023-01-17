@@ -378,7 +378,8 @@ phen_demw<-unite(phen_demw, speciesyr, species, year, remove=F)%>%filter(species
 #flowers counted after open
 #2020 missed
 phen_demw$num_flowers_1[phen_demw$species=="vaccinium"&phen_demw$year==2020]=NA_real_ 
-
+#num fruit has outlier-remove
+phen_demw$num_fruit_1[phen_demw$species=="vaccinium"&phen_demw$num_fruit_1>100]=NA_real_ 
 
 #betula 
 #constrain growth to be >0 
@@ -423,3 +424,4 @@ phen_demw$leaf_length_mm_3[phen_demw$species=="carex"&phen_demw$leaf_length_mm_3
 
 save(phen_demw, sf, file='data/DLphen_w_demog_all.Rdata')
 #load(file='data/DLphen_w_demog_all.Rdata')
+
