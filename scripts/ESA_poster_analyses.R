@@ -71,7 +71,7 @@ hist(alex_phen2_long$DOY)
 #plot_all----
 #trait simple
 ggplot(alex_phen2_long,
-       aes(x=doy, y=log(value+1), fill=otc_treatment))+
+       aes(x=doy, y=log(value), fill=otc_treatment))+
   geom_point(aes(colour=factor(otc_treatment)), alpha=0.5)+
   #geom_smooth(method = lm, formula = y ~ splines::bs(x, 3)) + #cubic spline
   geom_smooth(method='lm') + scale_fill_manual(values=specColor)+ scale_color_manual(values=specColor)+
@@ -80,7 +80,7 @@ ggplot(alex_phen2_long,
   ylab("trait value (log)")+ xlab("phen DOY")
 #trait simple2
 ggplot(alex_phen2_long,
-       aes(x=doy, y=log(value+1), fill=otc_treatment))+
+       aes(x=doy, y=log(value), fill=otc_treatment))+
   geom_point(aes(colour=factor(otc_treatment)), alpha=0.5)+
   #geom_smooth(method = lm, formula = y ~ splines::bs(x, 3)) + #cubic spline
   geom_smooth(method='lm') + scale_fill_manual(values=specColor)+ scale_color_manual(values=specColor)+
@@ -88,8 +88,13 @@ ggplot(alex_phen2_long,
   theme_bw()+  facet_wrap(~trait_simple2+phen,scales = "free")+ 
   ylab("trait value (log)")+ xlab("phen DOY")
 
+#check that only include species with n=100 obs or greater per treatment 
+check<-group_by(alex_phen2_long, trait_simple2, phen, species, otc_treatment)%>%summarise(ct=n())%>%filter(!is.na(trait_simple2))
+#filter out zeroes
+alex_phen2_longx<-subset(alex_phen2_long, value!=0)
+
 #flower time ~ flower #
-#No overall relationship
+#No overall relationship- no treatment effect 
 ggplot(subset(alex_phen2_long,trait_simple2=="flower_no"&phen=="pheno_flower_mature_first"),
        aes(x=doy, y=log(value+1), fill=otc_treatment))+
   geom_point(aes(colour=factor(otc_treatment)), alpha=0.5)+
@@ -100,10 +105,11 @@ ggplot(subset(alex_phen2_long,trait_simple2=="flower_no"&phen=="pheno_flower_mat
   ylab("Num flowers (log)")+ xlab("DOY mature flower")
 
 #by spp
-#Cassiope and Dryas- flower bud #
-#Papaver, Oxyria, Luzula flower #
-ggplot(subset(alex_phen2_long,trait_simple2=="flower_no"&phen=="pheno_flower_mature_first"),
-       aes(x=doy, y=log(value+1), fill=otc_treatment))+
+ #Cassiope and Dryas- flower bud #
+#Papaver flower #
+#Oxyria, Luzula -too few n < 100 per treat 
+ggplot(subset(alex_phen2_long,trait_simple2=="flower_no"&phen=="pheno_flower_mature_first"& species!="Oxyria"& species!="Luzula"),
+       aes(x=doy, y=log(value), fill=otc_treatment))+
   geom_point(aes(colour=factor(otc_treatment)), alpha=0.5)+
   geom_smooth(method='lm') + scale_fill_manual(values=specColor)+ scale_color_manual(values=specColor)+
   #geom_smooth(method='gam', formula= y ~ s(x, bs = "cs", fx = TRUE, k = 3)) + 
@@ -111,31 +117,33 @@ ggplot(subset(alex_phen2_long,trait_simple2=="flower_no"&phen=="pheno_flower_mat
   ylab("Num flowers (log)")+ xlab("DOY mature flower")
 
 #flower time ~ fruit num
-#negative relationship
-ggplot(subset(alex_phen2_long,trait_simple2=="fruit_num"&phen=="pheno_flower_mature_first"),
+#weak neg relationship- no treatment effect
+ggplot(subset(alex_phen2_long,trait_simple2=="fruit_no"&phen=="pheno_flower_mature_first"),
        aes(x=doy, y=log(value+1), fill=otc_treatment))+
   geom_point(aes(colour=factor(otc_treatment)), alpha=0.5)+
   #geom_smooth(method = lm, formula = y ~ splines::bs(x, 3)) + #cubic spline
   geom_smooth(method='lm') + scale_fill_manual(values=specColor)+ scale_color_manual(values=specColor)+
   # geom_smooth(method='gam', formula= y ~ s(x, bs = "cs", fx = TRUE, k = 3)) + 
-  theme_bw()+#  facet_wrap(~species,scales = "free")+ 
+  theme_bw()+ #facet_wrap(~species,scales = "free")+ 
   ylab("Num fruit (log)")+ xlab("DOY mature flower")
 
 #by spp
 #Cassiope, papaver immature fruit, dryas mature fruit
-ggplot(subset(alex_phen2_long,trait_simple2=="fruit_num"&phen=="pheno_flower_mature_first"),
+#negative relationship
+ggplot(subset(alex_phen2_long,trait_simple2=="fruit_no"&phen=="pheno_flower_mature_first"),
        aes(x=doy, y=log(value+1), fill=otc_treatment))+
   geom_point(aes(colour=factor(otc_treatment)), alpha=0.5)+
   #geom_smooth(method = lm, formula = y ~ splines::bs(x, 3)) + #cubic spline
- geom_smooth(method='lm') + scale_fill_manual(values=specColor)+ scale_color_manual(values=specColor)+
-# geom_smooth(method='gam', formula= y ~ s(x, bs = "cs", fx = TRUE, k = 3)) + 
-  theme_bw()+  facet_wrap(~species,scales = "free")+ 
+  geom_smooth(method='lm') + scale_fill_manual(values=specColor)+ scale_color_manual(values=specColor)+
+  # geom_smooth(method='gam', formula= y ~ s(x, bs = "cs", fx = TRUE, k = 3)) + 
+  theme_bw()+ facet_wrap(~species,scales = "free")+ 
   ylab("Num fruit (log)")+ xlab("DOY mature flower")
+
 
 #flower time ~ repro size 
 #pos relationship, OTC higher 
 ggplot(subset(alex_phen2_long,trait_simple2=="repro_size"&phen=="pheno_flower_mature_first"),
-       aes(x=doy, y=log(value+1), fill=otc_treatment))+
+       aes(x=doy, y=value, fill=otc_treatment))+
   geom_point(aes(colour=factor(otc_treatment)), alpha=0.5)+
   #geom_smooth(method = lm, formula = y ~ splines::bs(x, 3)) + #cubic spline
   geom_smooth(method='lm') + scale_fill_manual(values=specColor)+ scale_color_manual(values=specColor)+
@@ -145,15 +153,18 @@ ggplot(subset(alex_phen2_long,trait_simple2=="repro_size"&phen=="pheno_flower_ma
 
 #by spp
 #Oxyria max, all other spp mean 
-#strong direct effect of warming on size in arctagrostis
-ggplot(subset(alex_phen2_long,trait_simple2=="repro_size"&phen=="pheno_flower_mature_first"),
-       aes(x=doy, y=log(value+1), fill=otc_treatment))+
+#Arctagrostis, Luzula -too few n < 100 per treat 
+ggplot(subset(alex_phen2_long,trait_simple2=="repro_size"&phen=="pheno_flower_mature_first"&species!="Luzula"& species!="Arctagrostis"),
+       aes(x=doy, y=value, fill=otc_treatment))+
   geom_point(aes(colour=factor(otc_treatment)), alpha=0.5)+
   #geom_smooth(method = lm, formula = y ~ splines::bs(x, 3)) + #cubic spline
   geom_smooth(method='lm') + scale_fill_manual(values=specColor)+ scale_color_manual(values=specColor)+
   #geom_smooth(method='gam', formula= y ~ s(x, bs = "cs", fx = TRUE, k = 3)) + 
   theme_bw()+ facet_wrap(~species,scales = "free")+ 
   ylab("Mean repro size")+ xlab("DOY mature flower")
+
+
+
 
 #flower time ~ leaf no  
 #neg relationship 
