@@ -1,5 +1,6 @@
 1. Daring_phen_QAQC.R-> pulls in & compiles raw phenology data. Quality check data. Assign prior visit and interval censor for observations with date ranges recorded.  
 2. Daring_demog_QAQC.R-> cleans up individual plant demography (trait) data, standardize naming, standardize measurement units across years, check consistency in plant id numbers, deal with zeroes versus missing obs.
 3. Daring_clean_hobo_data.R-> pulls in, compiles and cleans daily hobo data @ site x treatment level for all years
-3. Daring_climate_QAQC.R-> pulls in and compiles climate data from the Daring Lake Met station and combines with phenology and demography data. Infills missing hobo data from climate temps. calculates GDDs and season avg/lags. 
+4. Daring_climate_QAQC.R-> pulls in and compiles climate data from the Daring Lake Met station and combines with phenology and demography data. Infills missing hobo data from climate temps. calculates GDDs and season avg/lags. 
+5. Daring_mixed_mods_setup.R->final cleaning and collating data across species for running multilevel models 
 Daring_mixed_mods.R-> run mixed effects/detrending models for phenology and demography over time.  
