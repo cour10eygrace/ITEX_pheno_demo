@@ -190,8 +190,11 @@ clim<-mutate(clim, season=case_when(month==4|month==5~"Spring",
 seas_clim<-select(clim, year, season, seas_avg)%>%distinct(.)%>%
   pivot_wider(names_from = season, values_from = seas_avg)%>%ungroup(.)%>%
   arrange(year)%>%#arrange(year)%>%
-  mutate(Spring_lag=lag(Spring), Summer_lag=lag(Summer), Fall_lag=lag(Fall))
-  
+  mutate(Spring_lag=lag(Spring), Summer_lag=lag(Summer), Fall_lag=lag(Fall))%>%
+  mutate(Summer_diff=Summer-Summer_lag)%>%
+  mutate_if(is.numeric, round, digits=3) 
+
+
 daring_phen_longx$hobo_temp_C<-round(daring_phen_longx$hobo_temp_C, digits = 3)#all same deg freedom
 daring_phen_longx$GDD<-round(daring_phen_longx$GDD, digits = 3)#all same deg freedom
 
