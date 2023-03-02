@@ -1,0 +1,107 @@
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(lme4)
+library(lmerTest)
+library(optimx)
+
+
+#color pallette
+specColor <- c(
+  "#89C5DA", "#DA5724", "#74D944", "#CE50CA", "#3F4921", "#C0717C", "#CBD588", "#5F7FC7",
+  "#673770", "#D3D93E", "#38333E", "#508578", "#D7C1B1", "#689030", "#AD6F3B", "#CD9BCD",
+  "#D14285", "#6DDE88", "#652926", "#7FDCC0", "#C84248", "#8569D5", "#5E738F", "#D1A33D",
+  "#8A7C64", "#599861", "#89C5DA", "#DA5724", "#74D944", "#CE50CA", "#3F4921", "#C0717C", "#CBD588", "#5F7FC7",
+  "#673770", "#D3D93E", "#38333E", "#508578", "#D7C1B1", "#689030", "#AD6F3B", "#CD9BCD",
+  "#D14285", "#6DDE88", "#652926", "#7FDCC0", "#C84248", "#8569D5", "#5E738F", "#D1A33D",
+  "#8A7C64", "#599861")
+
+#load alex data----
+load(file='data/alex_cleaned_phen.Rdata')
+
+#OR with prior visit censored (averaged) DOYs 
+##NOT USING CURRENTLY bc no dates with ranges 11/2/22 
+#load(file='data/alex_cleaned_phen_censored.Rdata')
+
+#select columns of interest 
+#just looking at flower phenology
+names(alex_phen)
+alex_phen2<-select(alex_phen, site, plot, year, species, plant_id, otc_treatment, 
+                   snow_treatment, fert_treatment, pheno_flower_bud_first,
+                   pheno_flower_mature_first, pheno_flower_senescence_first,
+                   trait_catkin_length_avg, trait_catkin_length_max,
+                   trait_flower_height, trait_flower_height_avg, trait_flower_height_max, 
+                   trait_flower_fruit_immature_no, trait_flower_fruit_mature_no,
+                   trait_agi_meas, trait_flower_bud_no, 
+                   trait_flower_total_per_plant_no, trait_leaf_mature_no, 
+                   trait_leaf_total_no)
+
+phen_cols<-dplyr::select(alex_phen2, contains("pheno_" )) 
+phen_colsx<-names(phen_cols)
+trait_cols<-dplyr::select(alex_phen2, contains("trait_" )) 
+trait_colsx<-names(trait_cols)
+
+#pivot long for renaming
+alex_phen2_long<-pivot_longer(alex_phen2, cols = all_of(phen_colsx), 
+                              names_to = "phen", values_to = "doy")%>%
+  pivot_longer(.,  cols = all_of(trait_colsx), 
+               names_to = "trait", values_to = "value")%>%
+  filter(!is.na(doy))%>%
+  filter(!is.na(value))
+
+#renaming sheet
+#used this to decide which traits to use
+#took trait(s) with best coverage for each spp-traitsimple2
+#and/or the measurement with the best/most data for a given spp 
+#alex_cts<-group_by(alex_phen2_long, species, trait)%>%summarise(ct=n())
+#write.csv(alex_cts, 'data/traits_AF.csv')
+
+traitsAF<-read.csv("data/traits_AF.csv")
+alex_phen2_long<-left_join(alex_phen2_long, traitsAF)%>%select(-ct)       
+
+#load climate data
+# -- SETUP ----
+# load libraries
+library(dplyr)
+library (tidyr)
+library(tidyverse)
+library (magrittr)
+library (readxl)
+library(lubridate)
+library(ggplot2)
+
+#read in data 
+clim<-read.csv("data/Alex_raw_data/claude_climate_data_1980-2018_daily.csv")
+
+#munge 
+clim2<-mutate(clim2, Date=mdy(date))%>%
+  mutate(doy=yday(Date), month=month(Date))%>%
+  mutate(season=case_when(month==4|month==5~"Spring",
+                          month==7|month==8|month==6~"Summer",
+                          month==9|month==10~"Fall", TRUE~NA_character_))%>%
+  group_by(year, season)%>%mutate(seas_avg=mean(temp_air_2m_mean, na.rm=T), n_obs=n())%>%
+  select(site, plot_id, plot, date, day, year, temp_air_2m_mean, Date, doy, month, season, seas_avg, n_obs)  
+
+seas_clim<-select(clim2, year, season, seas_avg)%>%distinct(.)%>%
+  pivot_wider(names_from = season, values_from = seas_avg)%>%ungroup(.)%>%
+  arrange(year)%>%#arrange(year)%>%
+  mutate(Spring_lag=lag(Spring), Summer_lag=lag(Summer), Fall_lag=lag(Fall))%>%
+  mutate(Summer_diff=Summer-Summer_lag)%>%
+  mutate_if(is.numeric, round, digits=3) 
+
+seas_clim<-filter(seas_clim, year<2019)#2019 Claude values are off 
+
+
+alex_phen2_long<-left_join(alex_phen2_long, seas_clim)
+
+save(alex_phen2_long, file='data/AFphen_dem_climate.Rdata')
+
+
+#subset for reproductive output 
+
+flower_open<-subset(alex_phen2_long, trait_simple2=="flower_no"|trait_simple2=="fruit_no")%>%
+  subset(year!=2019)%>%subset(phen=="pheno_flower_mature_first")
+  
+
+
+
