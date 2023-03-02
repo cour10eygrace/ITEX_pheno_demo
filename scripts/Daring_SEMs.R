@@ -5,24 +5,20 @@ library(ggplot2)
 library(tidyr)
 library(car)
 
-specColor <- c(
-  "#89C5DA", "#DA5724", "#74D944", "#CE50CA", "#3F4921", "#C0717C", "#CBD588", "#5F7FC7",
-  "#673770", "#D3D93E", "#38333E", "#508578", "#D7C1B1", "#689030", "#AD6F3B", "#CD9BCD",
-  "#D14285", "#6DDE88", "#652926", "#7FDCC0", "#C84248", "#8569D5", "#5E738F", "#D1A33D",
-  "#8A7C64", "#599861", "#89C5DA", "#DA5724", "#74D944", "#CE50CA", "#3F4921", "#C0717C", "#CBD588", "#5F7FC7",
-  "#673770", "#D3D93E", "#38333E", "#508578", "#D7C1B1", "#689030", "#AD6F3B", "#CD9BCD",
-  "#D14285", "#6DDE88", "#652926", "#7FDCC0", "#C84248", "#8569D5", "#5E738F", "#D1A33D",
-  "#8A7C64", "#599861")
+source("scripts/colorscale.R")
 
-####RUN MODELS separately by spp---- 
+#load datasets
 load('data/DLphen_dem_climate.Rdata')
 load(file="data/Mixed_mods_df.Rdata")
 
-#add in season lags 
+#merge clim data  
 flower_open<-left_join(flower_open, seas_clim)
 flower_bud<-left_join(flower_bud, seas_clim)
-#deal with summer_lag for year 0 (2001) replace with current year Summer
-flower_open<-mutate(flower_open, Summer_lag=if_else(is.na(Summer_lag), Summer, Summer_lag))
+
+#select data 
+semdat<-select(flower_open, species, year, plantid, plot, treatment, phen, trait, value, doy, GDD, GDD_lag, sfDOY,  phen2, trait2, Spring, Fall, Summer, 
+               Spring_lag, Summer_lag, Fall_lag) 
+semdat<-subset(semdat, treatment=="CTL") #only keep control data - look at OTCs separately 
 
 #RUN SEMs----  
 library(lme4)
@@ -32,259 +28,84 @@ library(rstan)
 rstan_options(disable_march_warning = TRUE)
 rstan_options(mc.cores = parallel::detectCores())
 
-#select data 
-semdat<-select(flower_open, species, year, plantid, plot, treatment, phen, trait, value, doy, GDD, GDD_lag, sfDOY,  phen2, trait2, Spring, Fall, Summer, 
-               Spring_lag, Summer_lag, Fall_lag) 
-semdat<-subset(semdat, treatment=="CTL") #only keep control data - look at OTCs separately 
-
-
-#look at general relationships- what do we expect?
-#change in temps over time 
-ggplot(semdat,
-       aes(x=as.numeric(year), y=Summer))+
-  geom_point(alpha=0.5)+
-  geom_smooth(method="lm") + theme_bw()+
-  xlab("Year")+ ylab("Growing Season temp (C)")
-
-#temporal trend in snow free much weaker but also higher variation (by sites)
-ggplot(semdat,
-       aes(x=as.numeric(year), y=sfDOY))+
-  geom_point(alpha=0.5)+
-  geom_smooth(method="lm") + theme_bw()+
-  xlab("Year")+ ylab("Snow free DOY")
-
-#doy~Spring negative
-ggplot(semdat,
-       aes(x=Spring, y=doy))+
-  geom_point(aes(colour=factor(treatment)), alpha=0.5)+
-  geom_smooth(method='lm') 
-cor.test(semdat$Spring,semdat$doy) #-0.23
-
-#doy~Summer negative
-ggplot(semdat,
-       aes(x=Summer, y=doy, fill=species))+
-  geom_point(aes(colour=species), alpha=0.5)+
-  geom_smooth(method="lm") + theme_bw()+
-  ylab("Flowering DOY")+ xlab("Growing Season temp (C)")
-
-cor.test(semdat$Summer,semdat$doy) #-0.4
-
-#doy~Fall_lag negative (weaker)
-ggplot(semdat,
-       aes(x=Fall_lag, y=doy))+
-  geom_point(aes(colour=factor(treatment)), alpha=0.5)+
-  geom_smooth(method='lm') 
-cor.test(semdat$doy, semdat$Fall_lag) #-0.15
-
-#doy~Summer_lag negative (weaker)
-ggplot(semdat,
-       aes(x=Summer_lag, y=doy))+
-  geom_point(aes(colour=factor(treatment)), alpha=0.5)+
-  geom_smooth(method='lm') 
-cor.test(semdat$doy, semdat$Summer_lag) #-0.13
-
-#doy~sfdoy positive
-ggplot(semdat,
-       aes(x=sfDOY, y=doy))+
-  geom_point(aes(colour=factor(treatment)), alpha=0.5)+
-  geom_smooth(method='lm') + 
-cor.test(semdat$doy, semdat$sfDOY) #0.4
-
-
-ggplot(semdat,
-       aes(x=sfDOY, y=doy, fill=species))+
-  geom_point(aes(colour=species), alpha=0.5)+
-  geom_smooth(method="lm") + theme_bw()+
-  ylab("Flowering DOY")+ xlab("Snow free DOY")
-
-#best for DOY overall: SFdoy, Spring and Summer 
-#are they highly correlated?? 
-cor.test(semdat$Spring, semdat$Summer) 
-cor.test(semdat$Spring, semdat$sfDOY) 
-cor.test(semdat$sfDOY, semdat$Summer) 
-#not too bad ~0.4-0.5
-
-#num fruit----
-fruitdat<-subset(semdat, trait2=="num_fruit")
-#general patterns
-#snow free does not affect fruit
-ggplot(fruitdat,
-       aes(x=sfDOY, y=value))+
-  geom_point(aes(colour=factor(treatment)), alpha=0.5)+
-  geom_smooth(method='lm') 
-
-#warmer Spring= no relationship
-ggplot(fruitdat,
-       aes(x=Spring, y=value))+
-  geom_point(aes(colour=factor(treatment)), alpha=0.5)+
-  geom_smooth(method='lm') 
-
-#warmer Summer= more fruit
-ggplot(fruitdat,
-       aes(x=Summer, y=value))+
-  geom_point(aes(colour=factor(treatment)), alpha=0.5)+
-  geom_smooth(method='lm') 
-cor.test(fruitdat$value, fruitdat$Summer)# 0.15
-
-#warmer previous fall= more fruit 
-ggplot(fruitdat,
-       aes(x=Fall_lag, y=value))+
-  geom_point(aes(colour=factor(treatment)), alpha=0.5)+
-  geom_smooth(method='lm') 
-cor.test(fruitdat$value, fruitdat$Fall_lag)# 0.2
-
-#warmer previous summer= more fruit 
-ggplot(fruitdat,
-       aes(x=Summer_lag, y=value))+
-  geom_point(aes(colour=factor(treatment)), alpha=0.5)+
-  geom_smooth(method='lm') 
-cor.test(fruitdat$value, fruitdat$Summer_lag)#0.22
-
-ggplot(fruitdat,
-       aes(x=Summer_lag, y=log(value), fill=species))+
-  geom_point(aes(colour=species), alpha=0.5)+
-  geom_smooth(method="lm") + theme_bw()+
-  ylab("Fruit number")+ xlab("Growing Season temp (C)") 
-
-
-#warmer previous spring= more fruit 
-ggplot(fruitdat,
-       aes(x=Spring_lag, y=value))+
-  geom_point(aes(colour=factor(treatment)), alpha=0.5)+
-  geom_smooth(method='lm') 
-cor.test(fruitdat$value, fruitdat$Spring_lag)#0.17
-
-#previous fall, summer and spring all about the same 
-
-#by spp
-#ledum 
-fruitdat_ledum<-subset(fruitdat, species=="ledum")
-fruitdat_ledum$Summer<-scale(fruitdat_ledum$Summer) 
-fruitdat_ledum$sfDOY<-scale(fruitdat_ledum$sfDOY) 
-fruitdat_ledum$Summer_lag<-scale(fruitdat_ledum$Summer_lag) 
-
-hist(fruitdat_ledum$doy) #normal
-fruitdat_ledum$doy<-scale(fruitdat_ledum$doy) 
-hist(fruitdat_ledum$doy) #normal 
-
-hist(fruitdat_ledum$value) #normal 
-fruitdat_ledum<-subset(fruitdat_ledum, value>0) #only individuals that did fruit 
-fruitdat_ledum$value<-scale(fruitdat_ledum$value)
-hist(fruitdat_ledum$value)#normal
-
-mod1<- bf(doy~  Summer + sfDOY + (1|plantid) + (1|year))  + gaussian()
-mod2 <- bf(value~ Summer_lag + doy + (1|plantid) + (1|year)) + gaussian()
-
-fruitmod_ledum<-brm(mod1+ mod2 + set_rescor(FALSE),
-                    data = fruitdat_ledum, control = list(adapt_delta=0.99, max_treedepth = 12), cores=3, chains=3, iter=2000)
-plot(fruitmod_ledum)
-pp_check(fruitmod_ledum, resp="doy") #looks good
-pp_check(fruitmod_ledum, resp="value") #looks good 
-
-save(fruitmod_ledum, file="data/BRMS_SEM_output/fruitnumber_ledum.Rdata")
-loo(fruitmod_ledum)
-loo_R2(fruitmod_ledum)
-summary(fruitmod_ledum)
-
-bayesplot::mcmc_pairs(as.matrix(fruitmod_ledum),pars = c( "b_doy_sfDOY", "b_doy_Summer", "b_value_doy", "b_value_Summer_lag"))
-                                                         #  "b_doy_Spring","b_value_sfDOY", "b_value_Fall_lag", ))
-
-bayestestR::ci(fruitmod_ledum, method="ETI", ci=c(0.85,0.9,0.95))
-
-#vaccinium- too few observations?? (98-borderline) 
-fruitdat_vacc<-subset(fruitdat, species=="vaccinium"& value>0)
-fruitdat_vacc$Summer<-scale(fruitdat_vacc$Summer) 
-fruitdat_vacc$sfDOY<-scale(fruitdat_vacc$sfDOY) 
-fruitdat_vacc$Summer_lag<-scale(fruitdat_vacc$Summer_lag) 
-
-hist(scale(log(fruitdat_vacc$doy))) #normal
-fruitdat_vacc$doy<-scale(fruitdat_vacc$doy) 
-hist(fruitdat_vacc$doy) #normal 
-
-hist(fruitdat_vacc$value) #left skew
-fruitdat_vacc$value<-scale(log(fruitdat_vacc$value))
-hist(fruitdat_vacc$value)
-
-mod1<- bf(doy~  Summer + sfDOY + (1|plantid) + (1|year))  + skew_normal()
-mod2 <- bf(value~ Summer_lag + doy + (1|plantid) + (1|year)) + skew_normal()
-
-fruitmod_vacc<-brm(mod1+ mod2 + set_rescor(FALSE),
-                    data = fruitdat_vacc, control = list(adapt_delta=0.99, max_treedepth = 12), cores=3, chains=3, iter=10000)
-plot(fruitmod_vacc)
-pp_check(fruitmod_vacc, resp="doy") #looks ok
-pp_check(fruitmod_vacc, resp="value") #looks bad
-
-save(fruitmod_vacc, file="data/BRMS_SEM_output/fruitnumber_vacc.Rdata")
-loo(fruitmod_vacc)
-loo_R2(fruitmod_vacc)#very bad... 
-summary(fruitmod_vacc)
-
-bayesplot::mcmc_pairs(as.matrix(fruitmod_vacc),pars = c( "b_doy_sfDOY", "b_doy_Summer", "b_value_doy", "b_value_Summer_lag"))
-#  "b_doy_Spring","b_value_sfDOY", "b_value_Fall_lag", ))
-
-bayestestR::ci(fruitmod_vacc, method="ETI", ci=c(0.85,0.9,0.95))
-
-
-#oxytropis- too few observations (68 only)
-fruitdat_oxy<-subset(fruitdat, species=="oxytropis"& value>0)
-
 #num flowers----
-flowdat<-subset(semdat, trait2=="num_flowers")
+flowdat<-subset(semdat, trait2=="num_flowers" & value > 0)
+
+#all species together -random intercepts
+flowdat$Summer<-scale(flowdat$Summer) 
+hist(flowdat$doy) #normal
+flowdat$doy<-scale(flowdat$doy) 
+hist(flowdat$doy) #normal
+
+hist(flowdat$value) #left skewed
+hist(log(flowdat$value)) #pretty normal 
+hist(scale(log(flowdat$value))) #pretty normal 
+flowdat$value<-scale(log(flowdat$value)) 
+
+mod1<- bf(doy~  Summer +  (1|species:plantid) + (1|year) + (1|species))  + gaussian()
+mod2 <- bf(value~ Summer + doy + (1|species:plantid) + (1|year) + (1|species)) + gaussian()
+
+flowmod<-brm(mod1+ mod2 + set_rescor(FALSE),
+             data = flowdat, control = list(adapt_delta=0.99, max_treedepth = 12), cores=3, chains=3, iter=2000)
+plot(flowmod)
+pp_check(flowmod, resp="doy") #
+pp_check(flowmod, resp="value") #looks good
+
+save(flowmod, file="data/BRMS_SEM_output/flownumber.Rdata")
+loo(flowmod)
+loo_R2(flowmod)
+
+parnames(flowmod)
+bayesplot::mcmc_pairs(as.matrix(flowmod),pars = c("b_doy_Summer", "b_value_Summer","b_value_doy"))   
+vcov(flowmod, correlation=T)%>%round(digits=2) #0.4 correlation -not too bad 
+
+summary(flowmod)
 
 #by species
+flowdat<-subset(semdat, trait2=="num_flowers" & value > 0)
+
 #ledum
 flowdat_ledum<-subset(flowdat, species=="ledum")
 #scale vars 
 flowdat_ledum$Summer<-scale(flowdat_ledum$Summer) 
-flowdat_ledum$sfDOY<-scale(flowdat_ledum$sfDOY) 
 flowdat_ledum$Summer_lag<-scale(flowdat_ledum$Summer_lag) 
 
 hist(flowdat_ledum$doy) #normal
 flowdat_ledum$doy<-scale(flowdat_ledum$doy) 
-hist(flowdat_ledum$doy) #normal
+hist(flowdat_ledum$doy) #normal-ish
 
-hist(flowdat_ledum$value) #normal 
-flowdat_ledum<-subset(flowdat_ledum, value>0) #only individuals that did flower 
+hist(flowdat_ledum$value) 
 flowdat_ledum<-subset(flowdat_ledum, value<40)#remove outlier 
 hist(flowdat_ledum$value)
 flowdat_ledum$value<-scale(flowdat_ledum$value)
 hist(flowdat_ledum$value)#normal
 
-mod1<- bf(doy~  Summer + sfDOY + (1|plantid) + (1|year))  + gaussian()
+mod1<- bf(doy~  Summer +  (1|plantid) + (1|year))  + gaussian()
+#mod2 <- bf(value~ Summer + doy + (1|plantid) + (1|year)) + gaussian()
 mod2 <- bf(value~ Summer_lag + doy + (1|plantid) + (1|year)) + gaussian()
 
 flowmod_ledum<-brm(mod1+ mod2 + set_rescor(FALSE),
-                    data = flowdat_ledum, control = list(adapt_delta=0.99, max_treedepth = 12), cores=3, chains=3, iter=2000)
+                   data = flowdat_ledum, control = list(adapt_delta=0.99, max_treedepth = 12), cores=3, chains=3, iter=2000)
+save(flowmod_ledum, file="data/BRMS_SEM_output/flownumber_ledum.Rdata")
+
 plot(flowmod_ledum)
 pp_check(flowmod_ledum, resp="doy") #looks good
 pp_check(flowmod_ledum, resp="value") #looks good 
 
-save(flowmod_ledum, file="data/BRMS_SEM_output/flownumber_ledum.Rdata")
 loo(flowmod_ledum) #looks good 
 loo_R2(flowmod_ledum)
 summary(flowmod_ledum)
 
-bayesplot::mcmc_pairs(as.matrix(flowmod_ledum),pars = c( "b_doy_sfDOY", "b_doy_Summer", "b_value_doy", "b_value_Summer_lag"))
-#some collinearity here...how to deal with this??
-post<-posterior_samples(flowmod_ledum)
-
-post %>% 
-  select(b_doy_sfDOY, b_doy_Summer) %>% 
-  cor() #not bad 0.33
-
-post %>% 
-  select(b_value_doy, b_value_Summer_lag) %>% 
-  cor()#not bad 0.34
-
+bayesplot::mcmc_pairs(as.matrix(flowmod_ledum),pars = c( "b_doy_Summer", "b_value_doy", "b_value_Summer_lag"))
+#collinearity here...how to deal with this??
+vcov(flowmod_ledum, correlation=T)%>%round(digits=2) #0.68 high,  #0.38 better 
 
 bayestestR::ci(flowmod_ledum, method="ETI", ci=c(0.85,0.9,0.95))
 
 #vaccinium 
-flowdat_vacc<-subset(flowdat, species=="vaccinium" & value>0) 
+flowdat_vacc<-subset(flowdat, species=="vaccinium") 
 #scale predictors 
 flowdat_vacc$Summer<-scale(flowdat_vacc$Summer) 
-flowdat_vacc$sfDOY<-scale(flowdat_vacc$sfDOY) 
-flowdat_vacc$Summer_lag<-scale(flowdat_vacc$Summer_lag) 
 
 hist(flowdat_vacc$doy) #normal ish 
 flowdat_vacc$doy<-scale(flowdat_vacc$doy)
@@ -295,18 +116,18 @@ hist(log(flowdat_vacc$value)) #normal ish-
 flowdat_vacc$value<-scale(log(flowdat_vacc$value)) 
 hist(flowdat_vacc$value) #skew normal?
 
-mod1<- bf(doy~  Summer + sfDOY + (1|plantid) + (1|year))  + gaussian()
-mod2 <- bf(value~ Summer_lag + doy + (1|plantid) + (1|year)) + skew_normal()
+mod1<- bf(doy~  Summer + (1|plantid) + (1|year))  + gaussian()
+#mod2 <- bf(value~ Summer + doy + (1|plantid) + (1|year)) + gaussian()
+mod2 <- bf(value~ Summer_lag + doy + (1|plantid) + (1|year)) + gaussian()
 
 flowmod_vacc<-brm(mod1+ mod2 + set_rescor(FALSE),
-                   data = flowdat_vacc, control = list(adapt_delta=0.99, max_treedepth = 12), cores=3, chains=3, iter=2000)
+                  data = flowdat_vacc, control = list(adapt_delta=0.99, max_treedepth = 12), cores=3, chains=3, iter=2000)
+save(flowmod_vacc, file="data/BRMS_SEM_output/flownumber_vacc.Rdata")
 
-  
 plot(flowmod_vacc)
 pp_check(flowmod_vacc, resp="doy") #meh..about the same as skew normal 
 pp_check(flowmod_vacc, resp="value") #looks good 
 
-save(flowmod_vacc, file="data/BRMS_SEM_output/flownumber_vacc.Rdata")
 loo(flowmod_vacc)#good
 loo_R2(flowmod_vacc)
 summary(flowmod_vacc)
@@ -314,34 +135,14 @@ summary(flowmod_vacc)
 bayestestR::ci(flowmod_vacc, method="ETI", ci=c(0.85,0.9,0.95))
 
 #check multicollinearity 
-bayesplot::mcmc_pairs(as.matrix(flowmod_vacc),pars = c( "b_doy_sfDOY", "b_doy_Summer", "b_value_doy", "b_value_Summer_lag"))
-#  "b_doy_Spring","b_value_sfDOY", "b_value_Fall_lag", ))
-post<-posterior_samples(flowmod_vacc)
+bayesplot::mcmc_pairs(as.matrix(flowmod_vacc),pars = c("b_doy_Summer", "b_value_doy", "b_value_Summer_lag"))
+vcov(flowmod_vacc, correlation=T)%>%round(digits=2) #0.63 high... 0.39 better 
 
-post %>% 
-  select(b_doy_sfDOY, b_doy_Summer) %>% 
-  cor() #0.49 #these might need to run these separately.. 
-
-post %>% 
-  select(b_value_doy, b_value_Summer_lag) %>% 
-  cor()#0.43- ehhh
-
-
-sfmod<-brm(doy~ sfDOY + (1|plantid) + (1|year), 
-data = flowdat_vacc, control = list(adapt_delta=0.99, max_treedepth = 12), cores=3, chains=3, iter=2000)
-summary(sfmod)
-#there is still huge error for SFDOY even when the only predictor in the model 
-#so multicollinearity isn't what's driving the large error in that parameter estimate in main model 
-#so can probably ignore it 
 
 #salix
-flowdat_sal<-subset(flowdat, species=="salix" & value>0) 
+flowdat_sal<-subset(flowdat, species=="salix") 
 #scale predictors
 flowdat_sal$Summer<-scale(flowdat_sal$Summer) +1
-flowdat_sal$Summer_lag<-scale(flowdat_sal$Summer_lag) +1
-flowdat_sal$sfDOY<-scale(flowdat_sal$sfDOY) +1
-mean(flowdat_sal$sfDOY)#mean =1 
-sd(flowdat_sal$sfDOY)#mean =1 
 
 hist(flowdat_sal$doy) #normal
 flowdat_sal$doy<-scale(flowdat_sal$doy) +1
@@ -363,37 +164,41 @@ sd(flowdat_sal$value) #~1
 #hist(flowdat_sal_tuk)
 #hist(scale(flowdat_sal_tuk))
 
-mod1<- bf(doy~ Summer+  sfDOY + (1|plantid) + (1|year))  + gaussian()
-mod2 <- bf(value~ Summer_lag +  doy+ (1|plantid) + (1|year)) + gaussian()
+mod1<- bf(doy~ Summer+ (1|plantid) + (1|year))  + gaussian()
+#mod2 <- bf(value~ Summer +doy+ (1|plantid) + (1|year)) + gaussian()
+mod2 <- bf(value~ Summer_lag +doy+ (1|plantid) + (1|year)) + gaussian()
+
 #try setting some better priors for doy bc pp check looks bad ??
 #priorx <- c(set_prior(prior = 'normal(0,2)', class='b', resp = "doy"), 	
-            # global slope, int belongs to a normal distribution centered around 0
+# global slope, int belongs to a normal distribution centered around 0
 #            set_prior(prior = 'normal(0,2)', class='Intercept', resp="doy"))
 
 flowmod_sal<-brm(mod1+ mod2 + set_rescor(FALSE),
                  data = flowdat_sal, control = list(adapt_delta=0.99, max_treedepth = 12), cores=3, chains=3, iter=2000,
                  save_pars = save_pars(all = TRUE))
-# random slopes, intercepts
-#set_prior(prior = 'cauchy(0,2)', class='sd', group="species"))	#doesn't like my sd priors syntax.... 
+save(flowmod_sal, file="data/BRMS_SEM_output/flownumber_sal.Rdata")
 
 plot(flowmod_sal)
-pp_check(flowmod_sal, resp="doy") #looks bad
+pp_check(flowmod_sal, resp="doy") #not great
 pp_check(flowmod_sal, resp="value") #looks ok
 
-save(flowmod_sal, file="data/BRMS_SEM_output/flownumber_sal.Rdata")
-loo(flowmod_sal)#looks good
+loo(flowmod_sal)#looks ok
 loo_R2(flowmod_sal)
 summary(flowmod_sal)
 
 
 bayestestR::ci(flowmod_sal, method="ETI", ci=c(0.85,0.9,0.95))
 
+#check multicollinearity 
+bayesplot::mcmc_pairs(as.matrix(flowmod_sal),pars = c("b_doy_Summer", "b_value_doy", "b_value_Summer_lag"))
+vcov(flowmod_sal, correlation=T)%>%round(digits=2) #0.63 high... 0.22 better
+
+
 #betula
-flowdat_bet<-subset(flowdat, species=="betula" & value>0) 
+flowdat_bet<-subset(flowdat, species=="betula") 
 #scale predictors 
 flowdat_bet$Summer<-scale(flowdat_bet$Summer) 
-flowdat_bet$Summer_lag<-scale(flowdat_bet$Summer_lag)
-flowdat_bet$sfDOY<-scale(flowdat_bet$sfDOY)
+
 #scale responses 
 hist(flowdat_bet$doy) #normal
 flowdat_bet$doy<-scale(flowdat_bet$doy)
@@ -405,30 +210,34 @@ hist(scale(log(flowdat_bet$value)))#hmm
 flowdat_bet$value<-scale(log(flowdat_bet$value)) 
 hist(flowdat_bet$value) #skew normal??
 
-mod1<- bf(doy~ Summer+  sfDOY + (1|plantid) + (1|year))  + skew_normal()
-mod2 <- bf(value~ Summer_lag +  doy+ (1|plantid) + (1|year)) + skew_normal()
+mod1<- bf(doy~ Summer+ (1|plantid) + (1|year))  + gaussian()
+#mod2 <- bf(value~ Summer +  doy+ (1|plantid) + (1|year)) + gaussian()
+mod2 <- bf(value~ Summer_lag +  doy+ (1|plantid) + (1|year)) + gaussian()
 
 flowmod_bet<-brm(mod1+ mod2 + set_rescor(FALSE),
                  data = flowdat_bet, control = list(adapt_delta=0.99, max_treedepth = 12), cores=3, chains=3, iter=2000, 
                  save_pars = save_pars(all = TRUE))
+save(flowmod_bet, file="data/BRMS_SEM_output/flownumber_bet.Rdata")
 
 plot(flowmod_bet)
 pp_check(flowmod_bet, resp="doy") #looks good
-pp_check(flowmod_bet, resp="value") #looks good
+pp_check(flowmod_bet, resp="value") #looks ok
 
-save(flowmod_bet, file="data/BRMS_SEM_output/flownumber_bet.Rdata")
-loo(flowmod_bet)  
+loo(flowmod_bet) #ok
 loo_R2(flowmod_bet)
 summary(flowmod_bet)
 
 bayestestR::ci(flowmod_bet, method="ETI", ci=c(0.85,0.9,0.95))
 
+#check multicollinearity 
+bayesplot::mcmc_pairs(as.matrix(flowmod_bet),pars = c("b_doy_Summer", "b_value_doy", "b_value_Summer_lag"))
+vcov(flowmod_bet, correlation=T)%>%round(digits=2) #0.64 high... 0.07 
+
+
 #saxifraga 
-flowdat_sax<-subset(flowdat, species=="saxifraga" & value>0) 
+flowdat_sax<-subset(flowdat, species=="saxifraga") 
 #scale predictors 
 flowdat_sax$Summer<-scale(flowdat_sax$Summer)
-flowdat_sax$Summer_lag<-scale(flowdat_sax$Summer_lag)
-flowdat_sax$sfDOY<-scale(flowdat_sax$sfDOY)
 #scale responses 
 hist(flowdat_sax$doy) #normal
 flowdat_sax$doy<-scale(flowdat_sax$doy)
@@ -440,66 +249,73 @@ hist(scale(log(flowdat_sax$value)))#hmm
 flowdat_sax$value<-scale(log(flowdat_sax$value)) 
 hist(flowdat_sax$value) #skew normal??
 
-mod1<- bf(doy~ Summer+  sfDOY + (1|plantid) + (1|year))  + gaussian()
-mod2 <- bf(value~ Summer_lag +  doy+ (1|plantid) + (1|year)) + gaussian()
+mod1<- bf(doy~ Summer+  (1|plantid) + (1|year))  + gaussian()
+mod2 <- bf(value~ Summer+  doy+ (1|plantid) + (1|year)) + gaussian()
 
 flowmod_sax<-brm(mod1+ mod2 + set_rescor(FALSE),
                  data = flowdat_sax, control = list(adapt_delta=0.99, max_treedepth = 12), cores=3, chains=3, iter=2000, 
                  save_pars = save_pars(all = TRUE))
+save(flowmod_sax, file="data/BRMS_SEM_output/flownumber_sax.Rdata")
 
 plot(flowmod_sax)
 pp_check(flowmod_sax, resp="doy") #looks good
 pp_check(flowmod_sax, resp="value") #looks good
 
-save(flowmod_sax, file="data/BRMS_SEM_output/flownumber_sax.Rdata")
 loo(flowmod_sax)  #good
 loo_R2(flowmod_sax)
 summary(flowmod_sax)
 
 bayestestR::ci(flowmod_sax, method="ETI", ci=c(0.85,0.9,0.95))
 
+
+#check multicollinearity 
+bayesplot::mcmc_pairs(as.matrix(flowmod_sax),pars = c("b_doy_Summer", "b_value_doy", "b_value_Summer"))
+vcov(flowmod_sax, correlation=T)%>%round(digits=2) #0.5 borderline -either way... 
+
 #oxytropis
-flowdat_oxy<-subset(flowdat, species=="oxytropis" & value>0) 
-hist(scale(flowdat_oxy$Summer))
+flowdat_oxy<-subset(flowdat, species=="oxytropis" ) 
 #scale predictors 
 flowdat_oxy$Summer<-scale(flowdat_oxy$Summer) 
-flowdat_oxy$Summer_lag<-scale(flowdat_oxy$Summer_lag)
-flowdat_oxy$sfDOY<-scale(flowdat_oxy$sfDOY)
+hist(scale(flowdat_oxy$Summer))
+
 #scale responses 
 hist(flowdat_oxy$doy) 
-flowdat_oxy$doy<-scale(flowdat_oxy$doy)
+flowdat_oxy$doy<-scale(log(flowdat_oxy$doy))
 hist(flowdat_oxy$doy) #normal?
 
 hist(flowdat_oxy$value) #left skewed
 hist(log(flowdat_oxy$value))#hmm
 hist(scale(log(flowdat_oxy$value)))#hmm
 flowdat_oxy$value<-scale(log(flowdat_oxy$value)) 
-hist(flowdat_oxy$value) #skew normal??
+hist(flowdat_oxy$value) #normal??
 
-mod1<- bf(doy~ Summer+  sfDOY + (1|plantid) + (1|year))  + gaussian()
-mod2 <- bf(value~ Summer_lag +  doy+ (1|plantid) + (1|year)) +gaussian()
+mod1<- bf(doy~ Summer+ (1|plantid) + (1|year))  + gaussian()
+mod2 <- bf(value~ Summer  +doy+ (1|plantid) + (1|year)) +gaussian()
 
 flowmod_oxy<-brm(mod1+ mod2 + set_rescor(FALSE),
                  data = flowdat_oxy, control = list(adapt_delta=0.99, max_treedepth = 12), cores=3, chains=3, iter=2000, 
                  save_pars = save_pars(all = TRUE))
+save(flowmod_oxy, file="data/BRMS_SEM_output/flownumber_oxy.Rdata")
 
 plot(flowmod_oxy)
 pp_check(flowmod_oxy, resp="doy") 
-pp_check(flowmod_oxy, resp="value") 
+pp_check(flowmod_oxy, resp="value") #not great 
 
-save(flowmod_oxy, file="data/BRMS_SEM_output/flownumber_oxy.Rdata")
-loo(flowmod_oxy)  
+loo(flowmod_oxy)  #ok
 loo_R2(flowmod_oxy)
 summary(flowmod_oxy)
 
 bayestestR::ci(flowmod_oxy, method="ETI", ci=c(0.85,0.9,0.95))
 
+#check multicollinearity 
+bayesplot::mcmc_pairs(as.matrix(flowmod_oxy),pars = c("b_doy_Summer", "b_value_doy", "b_value_Summer"))
+vcov(flowmod_oxy, correlation=T)%>%round(digits=2) #0.46 
+
 
 #eriophorum 
-flowdat_eri<-subset(flowdat, species=="eriophorum" & value>0) 
+flowdat_eri<-subset(flowdat, species=="eriophorum") 
+#scale data
 flowdat_eri$Summer<-scale(flowdat_eri$Summer) 
-flowdat_eri$Summer_lag<-scale(flowdat_eri$Summer_lag) 
-flowdat_eri$sfDOY<-scale(flowdat_eri$sfDOY) 
 
 hist(flowdat_eri$doy) 
 #flowdat_eri<-subset(flowdat_eri, doy<170)#remove outlier 
@@ -513,17 +329,18 @@ hist(log(flowdat_eri$value))#normal
 flowdat_eri$value<-scale(log(flowdat_eri$value))
 hist(flowdat_eri$value)#normal 
 
-mod1<- bf(doy~ Summer+  sfDOY + (1|plantid) + (1|year))  + skew_normal()
-mod2 <- bf(value~ Summer_lag +  doy+ (1|plantid) + (1|year)) + gaussian()
+mod1<- bf(doy~ Summer + (1|plantid) + (1|year))  + skew_normal()
+mod2 <- bf(value~ Summer  doy+ (1|plantid) + (1|year)) + gaussian()
 
 flowmod_eri<-brm(mod1+ mod2 + set_rescor(FALSE),
                  data = flowdat_eri, control = list(adapt_delta=0.99, max_treedepth = 12), cores=3, chains=3, iter=2000, 
                  save_pars = save_pars(all = TRUE))
+save(flowmod_eri, file="data/BRMS_SEM_output/flownumber_eri.Rdata")
+
 plot(flowmod_eri)
 pp_check(flowmod_eri, resp="doy") #looks good
 pp_check(flowmod_eri, resp="value") #looks good
 
-save(flowmod_eri, file="data/BRMS_SEM_output/flownumber_eri.Rdata")
 loo(flowmod_eri)
 loo_R2(flowmod_eri)
 summary(flowmod_eri)
@@ -532,12 +349,206 @@ bayestestR::ci(flowmod_eri, method="ETI", ci=c(0.85,0.9,0.95))
 
 
 #check multicollinearity 
-bayesplot::mcmc_pairs(as.matrix(flowmod_eri),pars = c( "b_doy_sfDOY", "b_doy_Summer", "b_value_doy", "b_value_Summer_lag"))
+bayesplot::mcmc_pairs(as.matrix(flowmod_eri),pars = c( "b_doy_Summer", "b_value_doy", "b_value_Summer"))
+vcov(flowmod_eri, correlation=T)%>%round(digits=2) #0.41 not bad 
+
+#prob fruit----
+fruitdat<-subset(semdat, trait2=="num_fruit") #don't remove zeroes because individuals could flower but not fruit 
+fruitdat<-mutate(fruitdat, probfruit=ifelse(value==0, 0, 1))
+hist(fruitdat$probfruit)
+
+fruitdat$Summer<-scale(fruitdat$Summer)
+fruitdat$Summer_lag<-scale(fruitdat$Summer_lag)
+hist(fruitdat$Summer)
+hist(fruitdat$Summer_lag)
+
+hist(fruitdat$doy) #normal
+fruitdat$doy<-scale(fruitdat$doy)
+hist(fruitdat$doy, breaks = 20) #bit weird
+
+mod1<- bf(doy~  Summer + Summer_lag + (1|species:plantid) + (1|year) + (1|species))  + gaussian()
+mod2 <- bf(probfruit ~  Summer_lag + doy + (1|species:plantid) + (1|year) + (1|species)) + bernoulli()
+
+pfruitmod<-brm(mod1+ mod2 + set_rescor(FALSE),
+              data = fruitdat, control = list(adapt_delta=0.99, max_treedepth = 12), cores=3, chains=3, iter=2000)
+plot(pfruitmod)
+pp_check(pfruitmod, resp="doy") #good
+pp_check(pfruitmod, resp="probfruit") #good
+loo(pfruitmod) #good 
+loo_R2(pfruitmod) #good
+summary(pfruitmod)
+
+parnames(fruitmod)
+bayesplot::mcmc_pairs(as.matrix(pfruitmod),pars = c("b_doy_Summer","b_doy_Summer_lag", "b_probfruit_Summer_lag", "b_probfruit_doy"))   
+vcov(pfruitmod, correlation=T)%>%round(digits=2)
+bayestestR::ci(pfruitmod, method="ETI", ci=c(0.85,0.9,0.95))
+
+#num fruit----
+fruitdat2<-subset(semdat, trait2=="num_fruit"& value>0) #don't remove zeroes because individuals could flower but not fruit 
+
+fruitdat2$Summer<-scale(fruitdat2$Summer)
+fruitdat2$Summer_lag<-scale(fruitdat2$Summer_lag)
+hist(fruitdat2$Summer)
+hist(fruitdat2$Summer_lag)
+
+hist(fruitdat2$doy) #normal
+fruitdat2$doy<-scale(fruitdat2$doy)
+hist(fruitdat2$doy, breaks = 20) #bit weird
+
+hist(fruitdat2$value, breaks=20) #right skewed
+fruitdat<-subset(fruitdat2, value<40) #remove outlier
+hist(fruitdat2$value) #right skewed
+
+library(rcompanion)
+transformTukey(fruitdat2$value)
+hist(log(fruitdat2$value)) 
+hist(scale(log(fruitdat2$value))) #looks ok..
+
+fruitdat2$value<-scale(log(fruitdat2$value)) 
+hist(fruitdat2$value) #normal ish 
+
+unique(fruitdat2$species)#3 spp 
+
+mod1<- bf(doy~  Summer + Summer_lag + (1|species:plantid) + (1|year) + (1|species))  + gaussian()
+mod2 <- bf(value~  Summer_lag + doy + (1|species:plantid) + (1|year) + (1|species)) + skew_normal()
+
+fruitmod<-brm(mod1+ mod2 + set_rescor(FALSE),
+             data = fruitdat2, control = list(adapt_delta=0.99, max_treedepth = 12), cores=3, chains=3, iter=2000)
+
+save(fruitmod, file="data/BRMS_SEM_output/fruitnumber.Rdata")
+
+plot(fruitmod)
+pp_check(fruitmod, resp="doy") #good
+pp_check(fruitmod, resp="value") #gaussian worse than skew normal
+
+loo(fruitmod) #skew normal bad, gaussian ok 
+loo_R2(fruitmod) #seems too high for fruit number 
+summary(fruitmod)
+
+parnames(fruitmod)
+bayesplot::mcmc_pairs(as.matrix(fruitmod),pars = c("b_doy_Summer","b_doy_Summer_lag", "b_value_Summer_lag", "b_value_doy"))   
+vcov(fruitmod, correlation=T)%>%round(digits=2)
+bayestestR::ci(fruitmod, method="ETI", ci=c(0.85,0.9,0.95))
+
+
+#by spp
+fruitdat<-subset(semdat, trait2=="num_fruit")
+#ledum 
+fruitdat_ledum<-subset(fruitdat, species=="ledum")
+fruitdat_ledum$Summer<-scale(fruitdat_ledum$Summer) 
+fruitdat_ledum$Summer_lag<-scale(fruitdat_ledum$Summer_lag) 
+
+hist(fruitdat_ledum$doy) #normal
+fruitdat_ledum$doy<-scale(fruitdat_ledum$doy) 
+hist(fruitdat_ledum$doy) #normal 
+
+hist(fruitdat_ledum$value) #normal 
+fruitdat_ledum$value<-scale(fruitdat_ledum$value)
+hist(fruitdat_ledum$value)#normal
+
+mod1<- bf(doy~  Summer + Summer_lag + (1|plantid) + (1|year))  + gaussian()
+mod2 <- bf(value~  Summer_lag  + doy + (1|plantid) + (1|year)) + gaussian()
+
+fruitmod_ledum<-brm(mod1+ mod2 + set_rescor(FALSE),
+                    data = fruitdat_ledum, control = list(adapt_delta=0.99, max_treedepth = 12), cores=3, chains=3, iter=2000)
+plot(fruitmod_ledum)
+pp_check(fruitmod_ledum, resp="doy") #looks good
+pp_check(fruitmod_ledum, resp="value") #looks good 
+
+save(fruitmod_ledum, file="data/BRMS_SEM_output/fruitnumber_ledum.Rdata")
+loo(fruitmod_ledum) #good
+loo_R2(fruitmod_ledum) #good
+summary(fruitmod_ledum)
+
+parnames(fruitmod_ledum)
+bayesplot::mcmc_pairs(as.matrix(fruitmod_ledum),pars = c("b_doy_Summer",   "b_doy_Summer_lag", "b_value_Summer_lag",  "b_value_doy"))   
+vcov(fruitmod_ledum, correlation=T)%>%round(digits=2) #no issues 
+  
+bayestestR::ci(fruitmod_ledum, method="ETI", ci=c(0.85,0.9,0.95))
+
+
+#vaccinium- too few observations?? (98-borderline) 
+fruitdat_vacc<-subset(fruitdat, species=="vaccinium")
+fruitdat_vacc$Summer<-scale(fruitdat_vacc$Summer) 
+fruitdat_vacc$Summer_lag<-scale(fruitdat_vacc$Summer_lag) 
+
+hist(fruitdat_vacc$doy) 
+hist(scale(fruitdat_vacc$doy))
+fruitdat_vacc$doy<-scale(fruitdat_vacc$doy) 
+hist(fruitdat_vacc$doy) #normal ish
+
+hist(fruitdat_vacc$value) #right skew
+fruitdat_vacc$value<-scale(log(fruitdat_vacc$value))
+hist(fruitdat_vacc$value)
+
+mod1<- bf(doy~  Summer + Summer_lag+ (1|plantid) + (1|year))  + skew_normal()
+mod2 <- bf(value~ Summer_lag + doy + (1|plantid) + (1|year)) + skew_normal()
+
+fruitmod_vacc<-brm(mod1+ mod2 + set_rescor(FALSE),
+                    data = fruitdat_vacc, control = list(adapt_delta=0.99, max_treedepth = 12), cores=3, chains=3, iter=10000)
+plot(fruitmod_vacc)
+pp_check(fruitmod_vacc, resp="doy") #looks ok
+pp_check(fruitmod_vacc, resp="value") #looks bad
+
+save(fruitmod_vacc, file="data/BRMS_SEM_output/fruitnumber_vacc.Rdata")
+loo(fruitmod_vacc)
+loo_R2(fruitmod_vacc)#very bad... 
+summary(fruitmod_vacc)
+
+bayesplot::mcmc_pairs(as.matrix(fruitmod_vacc),pars = c( "b_doy_Summer", "b_doy_Summer_lag", "b_value_doy", "b_value_Summer_lag"))
 #  "b_doy_Spring","b_value_sfDOY", "b_value_Fall_lag", ))
 
+bayestestR::ci(fruitmod_vacc, method="ETI", ci=c(0.85,0.9,0.95))
 
 
-#repro size----
+#oxytropis- very few observations (68 only)
+fruitdat_oxy<-subset(fruitdat, species=="oxytropis")
+fruitdat_oxy$Summer<-scale(fruitdat_oxy$Summer) 
+fruitdat_oxy$Summer_lag<-scale(fruitdat_oxy$Summer_lag) 
+
+hist(fruitdat_oxy$doy) #normal
+fruitdat_oxy$doy<-scale(fruitdat_oxy$doy) 
+hist(fruitdat_oxy$doy) #normal ish
+
+hist(fruitdat_oxy$value) #right skew
+fruitdat_oxy<-subset(fruitdat_oxy, value<40) #remove outlier
+fruitdat_oxy$value<-scale(log(fruitdat_oxy$value))
+hist(fruitdat_oxy$value)
+
+mod1<- bf(doy~  Summer + Summer_lag+ (1|plantid) + (1|year))  + skew_normal()
+mod2 <- bf(value~ Summer_lag + doy + (1|plantid) + (1|year)) + skew_normal()
+
+fruitmod_oxy<-brm(mod1+ mod2 + set_rescor(FALSE),
+                   data = fruitdat_oxy, control = list(adapt_delta=0.99, max_treedepth = 12), cores=3, chains=3, iter=10000)
+plot(fruitmod_oxy)
+pp_check(fruitmod_oxy, resp="doy") #looks ok
+pp_check(fruitmod_oxy, resp="value") #looks bad
+
+save(fruitmod_oxy, file="data/BRMS_SEM_output/fruitnumber_oxy.Rdata")
+loo(fruitmod_oxy)
+loo_R2(fruitmod_oxy)#very bad... 
+summary(fruitmod_oxy)
+
+
+
+
+#simply check if fruit number and flower number correlate
+fruit_test<-subset(semdat, trait2=="num_flowers" | trait2=="num_fruit")%>%
+  select(species, year, plantid, value, trait2)%>% pivot_wider(names_from = "trait2", values_from = "value")%>%
+  subset(num_flowers>0)
+
+plot(log(fruit_test$num_flowers)~log(fruit_test$num_fruit))
+cor.test(fruit_test$num_flowers, fruit_test$num_fruit)
+
+ggplot(fruit_test,
+       aes(x=log(num_flowers), y=log(num_fruit)))+
+  geom_point( alpha=0.5)+
+  geom_smooth(method='lm') + facet_wrap(~species, scales="free")+ theme_bw()+
+ ylab("Num fruit (log)")+ xlab("Num flowers (log)")
+
+
+#OLD CODE----
+#repro size
 #by spp
 reproszdat<-subset(semdat, trait2=="repro_size")
 #eriophorum
@@ -641,7 +652,7 @@ summary(reproszmod_sal)
 
 bayestestR::ci(reproszmod_sal, method="ETI", ci=c(0.85,0.9,0.95))
 
-#diameter----
+#diameter
 diamdat<-subset(semdat, trait2=="diameter_mm")
 diamdat$GDD<-scale(diamdat$GDD)
 diamdat$GDD_lag<-scale(diamdat$GDD_lag)
@@ -667,7 +678,7 @@ save(diammod_indiv, file="data/BRMS_SEM_output/diameter_indiv.Rdata")
 summary(diammod_indiv)
 
 
-#treatment effects?----
+#treatment effects
 
 dat<-select(flower_open, species, year, plantid, plot, treatment, phen, trait, value, doy, GDD, GDD_lag, sfDOY,  phen2, trait2, Spring, Fall, Summer, 
             Spring_lag, Summer_lag, Fall_lag) 
@@ -704,7 +715,7 @@ ggplot(subset(dat,trait2=="repro_size"),
 
 
 
-#growth----
+#growth
 growdat<-subset(semdat, trait2=="growth_inc_mm")
 #by species 
 ##ledum 
@@ -755,7 +766,7 @@ mod1<- bf(doy~ Summer+  sfDOY + (1|plantid) + (1|year))  + skew_normal()
 mod2 <- bf(value~ Summer_lag +  doy+ (1|plantid) + (1|year)) + skew_normal()
 
 growmod_vacc<-brm(mod1+ mod2 + set_rescor(FALSE),
-                   data = growdat_vacc, control = list(adapt_delta=0.99, max_treedepth = 12), cores=3, chains=3, iter=2000)
+                  data = growdat_vacc, control = list(adapt_delta=0.99, max_treedepth = 12), cores=3, chains=3, iter=2000)
 plot(growmod_vacc)
 pp_check(growmod_vacc, resp="doy") #looks ok
 pp_check(growmod_vacc, resp="value") #looks ok 
@@ -786,7 +797,7 @@ mod1<- bf(doy~ Summer+  sfDOY + (1|plantid) + (1|year))  + skew_normal()
 mod2 <- bf(value~ Summer_lag +  doy+ (1|plantid) + (1|year)) + skew_normal()
 
 growmod_betula<-brm(mod1+ mod2 + set_rescor(FALSE),
-                  data = growdat_betula, control = list(adapt_delta=0.99, max_treedepth = 12), cores=3, chains=3, iter=2000)
+                    data = growdat_betula, control = list(adapt_delta=0.99, max_treedepth = 12), cores=3, chains=3, iter=2000)
 plot(growmod_betula)
 pp_check(growmod_betula, resp="doy") #looks ok
 pp_check(growmod_betula, resp="value") #looks ok 
@@ -818,7 +829,7 @@ mod1<- bf(doy~ Summer+  sfDOY + (1|plantid) + (1|year))  + skew_normal()
 mod2 <- bf(value~ Summer_lag +  doy+ (1|plantid) + (1|year)) + skew_normal()
 
 growmod_salix<-brm(mod1+ mod2 + set_rescor(FALSE),
-                    data = growdat_salix, control = list(adapt_delta=0.99, max_treedepth = 12), cores=3, chains=3, iter=2000)
+                   data = growdat_salix, control = list(adapt_delta=0.99, max_treedepth = 12), cores=3, chains=3, iter=2000)
 plot(growmod_salix)
 pp_check(growmod_salix, resp="doy") #looks ok
 pp_check(growmod_salix, resp="value") #looks ok 
@@ -833,7 +844,7 @@ bayestestR::ci(growmod_salix, method="ETI", ci=c(0.85,0.9,0.95))
 
 
 
-#leaf length----
+#leaf length
 leafdat<-subset(semdat, trait2=="leaf_length_mm")
 leafdat$GDD<-scale(leafdat$GDD)
 leafdat$GDD_lag<-scale(leafdat$GDD_lag)
@@ -900,8 +911,6 @@ loo_R2(leafmod_eri)
 summary(leafmod_eri)
 
 bayestestR::ci(leafmod_eri, method="ETI", ci=c(0.85,0.9,0.95))
-
-#OLD CODE----
 
 
 growdat$GDD<-scale(growdat$GDD)
