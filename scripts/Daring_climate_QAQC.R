@@ -98,9 +98,6 @@ clim2<-group_by(clim2,doy, year)%>%
 clim<-select(clim, year, doy, av_air_temp_C, month)
 clim<-rbind(clim, clim2)%>%distinct(.)
 
-#filter for Daring and June-Nov 
-#clim<-filter(clim, month>4& month<12)
-
 clim$av_air_temp_C<-round(clim$av_air_temp_C, digits = 3)#all same deg freedom
 clim$year<-as.character(as.numeric(clim$year))
 
@@ -120,47 +117,47 @@ daring_phen_long<-left_join(daring_phen_long, sf)%>%mutate(DOY_stdsf=doy-sfDOY)%
 
 #how to account for OTC warming?? 
 #pull in hobo data 
-load(file="data/hobo_daily_allyears.Rdata")
+#load(file="data/hobo_daily_allyears.Rdata")
   
-hobo_dailyw$year<-as.character(as.numeric(hobo_dailyw$year))
+#hobo_dailyw$year<-as.character(as.numeric(hobo_dailyw$year))
 
 
 #add site info to phen df
 daring_phen_long<-mutate(daring_phen_long, site=case_when(species=="eriophorum" ~"F", 
                                                             species=="vaccinium"|species=="ledum"~"B"))
 #join
-daring_phen_long<-left_join(daring_phen_long, select(hobo_dailyw, -Date))
+#daring_phen_long<-left_join(daring_phen_long, select(hobo_dailyw, -Date))
 
 #see how many warming individuals are missing hobo temp 
 #can be due to phenology earlier/later than hobo deployed or missing years (2001, 2010) 
-missing_hobo<-filter(daring_phen_long, is.na(OTC)&treatment=="OTC")
+#missing_hobo<-filter(daring_phen_long, is.na(OTC)&treatment=="OTC")
 #lots->need to infill these 
 
 #checK if av daily air temp and hobo temps in CTL are similar
-plot(daring_phen_long$av_air_temp_C~daring_phen_long$CTL)
-cor.test(daring_phen_long$av_air_temp_C,daring_phen_long$CTL) #97% correlation- good
+#plot(daring_phen_long$av_air_temp_C~daring_phen_long$CTL)
+#cor.test(daring_phen_long$av_air_temp_C,daring_phen_long$CTL) #97% correlation- good
 
 #model relationship between ambient air temp and OTC/CTL temps (hobos)  
 #use equations to infill missing temps 
-summary(lm(OTC~av_air_temp_C, daring_phen_long)) #R2=0.92
-summary(lm(CTL~av_air_temp_C, daring_phen_long)) #R2=0.95
-summary(lm(OTC~CTL, daring_phen_long)) #R2=0.98 #warms about 0.5 degrees
+#summary(lm(OTC~av_air_temp_C, daring_phen_long)) #R2=0.92
+#summary(lm(CTL~av_air_temp_C, daring_phen_long)) #R2=0.95
+#summary(lm(OTC~CTL, daring_phen_long)) #R2=0.98 #warms about 0.5 degrees
 
 
 #now fill in missing hobo temps from above eqns 
 #if we had hobo value (CTL or OTC) we used that value, 
 #if not we infilled from airtemp for control or regression coeff for warming
 
-daring_phen_longx<-mutate(daring_phen_long, 
-                  CTL2=if_else(is.na(CTL),  0.938*av_air_temp_C + 1.086, CTL),
-                  OTC2= if_else(is.na(OTC), 0.929*av_air_temp_C + 1.563, OTC))
+#daring_phen_longx<-mutate(daring_phen_long, 
+#                  CTL2=if_else(is.na(CTL),  0.938*av_air_temp_C + 1.086, CTL),
+#                  OTC2= if_else(is.na(OTC), 0.929*av_air_temp_C + 1.563, OTC))
 #pull out correct value by treatment 
-daring_phen_longx<-mutate(daring_phen_longx, 
-        hobo_temp_C=if_else(treatment=="OTC", OTC2, CTL2))
+#daring_phen_longx<-mutate(daring_phen_longx, 
+#        hobo_temp_C=if_else(treatment=="OTC", OTC2, CTL2))
 
 #manually fill in July 21st temp (DOY 202) for 2022 (received from Shawne on 11/22/22)
-daring_phen_longx<-mutate(daring_phen_longx,
-  hobo_temp_C=if_else(doy==202 & year==2022,14.095, hobo_temp_C))
+#daring_phen_longx<-mutate(daring_phen_longx,
+#  hobo_temp_C=if_else(doy==202 & year==2022,14.095, hobo_temp_C))
 
 
 #now calculate GDDs----
@@ -172,13 +169,13 @@ climsf<-
   left_join(clim, sfx)%>%
   filter(av_air_temp_C>0)%>%
   arrange(year, sfDOY, doy)%>%
-  group_by(year, sfDOY)%>%mutate(GDD=cumsum(0.938*av_air_temp_C+1.086), 
-                                 GDD_OTC=cumsum(0.929*av_air_temp_C + 1.563))%>%
+  group_by(year, sfDOY)%>%#mutate(GDD=cumsum(0.938*av_air_temp_C+1.086), 
+                           #      GDD_OTC=cumsum(0.929*av_air_temp_C + 1.563))%>%
   filter(doy>sfDOY)
 
   #join back to phen data 
-daring_phen_longx<-left_join(daring_phen_longx, select(climsf, -av_air_temp_C))%>%
-  mutate(GDD=if_else(treatment=="OTC", GDD_OTC, GDD))
+daring_phen_longx<-left_join(daring_phen_long, select(climsf, -av_air_temp_C))#%>%
+  #mutate(GDD=if_else(treatment=="OTC", GDD_OTC, GDD))
 
 #calculate average growing season temps 
 clim<-mutate(clim, season=case_when(month==4|month==5~"Spring",
@@ -195,8 +192,7 @@ seas_clim<-select(clim, year, season, seas_avg)%>%distinct(.)%>%
   mutate_if(is.numeric, round, digits=3) 
 
 
-daring_phen_longx$hobo_temp_C<-round(daring_phen_longx$hobo_temp_C, digits = 3)#all same deg freedom
-daring_phen_longx$GDD<-round(daring_phen_longx$GDD, digits = 3)#all same deg freedom
+#daring_phen_longx$hobo_temp_C<-round(daring_phen_longx$hobo_temp_C, digits = 3)#all same deg freedom
+#daring_phen_longx$GDD<-round(daring_phen_longx$GDD, digits = 3)#all same deg freedom
 
-daring_phen_long<-daring_phen_longx
 save(daring_phen_long, seas_clim, file='data/DLphen_dem_climate.Rdata')
