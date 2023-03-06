@@ -42,8 +42,11 @@ doy3<-lmer(doy~ Summer+ Summer_lag +  sfDOY + (1|species:plantid) + (1|year) + (
 summary(doy3)
 
 #model selection
-aictab(cand.set = c(doy1, doy1x, doy1y, doy2, doy2x, doy2y, doy3), 
-       modnames = c("doy1", "doy1x", "doy1y", "doy2", "doy2x", "doy2y", "doy3"))
+table1A<-aictab(cand.set = c(doy1, doy1x, doy1y, doy2, doy2x, doy2y, doy3), 
+       modnames = c("Growing season temp", "Growing season temp (prev)", "Snow free DOY", 
+                    "Growing season temp + Growing season temp (prev)", "Growing season temp + Snow free DOY",
+                    "Growing season temp (prev) + Snow free DOY", "Growing season temp + Growing season temp (prev) + Snow free DOY"))
+table1A$Response<-"Flowering time (DOY)"
 #Summer+ SF, Summer + Summer_lag + SF, Summer, Summer + Summer_lag all equal 
 #use most simple model summer only & for consistency with flower number (below)
 #use summer + summer lag in fruit models 
@@ -68,8 +71,11 @@ summary(flow2y)
 flow3<-lmer(log(value)~ Summer+ Summer_lag +  sfDOY + (1|species:plantid) + (1|year) + (1|species), flowdat)
 summary(flow3)
 
-aictab(cand.set = c(flow1, flow1x, flow1y, flow2, flow2x, flow2y, flow3), 
-       modnames = c("flow1", "flow1x", "flow1y","flow2", "flow2x", "flow2y", "flow3"))
+table1B<-aictab(cand.set = c(flow1, flow1x, flow1y, flow2, flow2x, flow2y, flow3), 
+       modnames = c("Growing season temp", "Growing season temp (prev)", "Snow free DOY", 
+                      "Growing season temp + Growing season temp (prev)", "Growing season temp + Snow free DOY",
+                      "Growing season temp (prev) + Snow free DOY", "Growing season temp + Growing season temp (prev) + Snow free DOY"))
+table1B$Response<-"Flower number"
 #Summer only best model delta aic >2 
 
 
@@ -92,8 +98,13 @@ summary(pfruit2y)
 pfruit3<-glmer(probfruit~ Summer+ Summer_lag +  sfDOY + (1|species:plantid) + (1|year) + (1|species), fruitdat, family = binomial())
 summary(pfruit3)
 
-aictab(cand.set = c(pfruit1, pfruit1x, pfruit1y, pfruit2, pfruit2x, pfruit2y, pfruit3), 
-       modnames = c("pfruit1", "pfruit1x", "pfruit1y", "pfruit2", "pfruit2x", "pfruit2y", "pfruit3"))
+table1C<-aictab(cand.set = c(pfruit1, pfruit1x, pfruit1y, pfruit2, pfruit2x, pfruit2y, pfruit3), 
+       modnames = c("Growing season temp", "Growing season temp (prev)", "Snow free DOY", 
+                     "Growing season temp + Growing season temp (prev)", "Growing season temp + Snow free DOY",
+                     "Growing season temp (prev) + Snow free DOY", "Growing season temp + Growing season temp (prev) + Snow free DOY"))
+table1C$Response<-"Probability of fruiting"
+table1C<-rename(table1C, Res.LL=LL)
+
 #Summer lag only is best model but lots of other models are equivalent. Use summer lag for consistency with fruit number (below)
 
 
@@ -117,11 +128,20 @@ summary(fruit2y)
 fruit3<-lmer(log(value)~ Summer+ Summer_lag +  sfDOY + (1|species:plantid) + (1|year) + (1|species), fruitdat)
 summary(fruit3)
 
-aictab(cand.set = c(fruit1, fruit1x, fruit1y, fruit2, fruit2x, fruit2y, fruit3), 
-       modnames = c("fruit1", "fruit1x", "fruit1y", "fruit2", "fruit2x", "fruit2y", "fruit3"))
+table1D<-aictab(cand.set = c(fruit1, fruit1x, fruit1y, fruit2, fruit2x, fruit2y, fruit3), 
+       modnames = c("Growing season temp", "Growing season temp (prev)", "Snow free DOY", 
+                     "Growing season temp + Growing season temp (prev)", "Growing season temp + Snow free DOY",
+                     "Growing season temp (prev) + Snow free DOY", "Growing season temp + Growing season temp (prev) + Snow free DOY"))
+table1D$Response<-"Fruit number"
+
 #Summer lag only best model delta aic >2 
 
+#Results table for manuscript 
+Table1<-rbind(table1A, table1B, table1C, table1D)
+names(Table1)
+Table1<-select(Table1, Response,Modnames, AICc, Delta_AICc)%>%rename(Predictors=Modnames)
 
+#write.csv(Table1, "Table1.csv")
 
 ##look at general relationships- what do we expect?
 #change in temps over time 
@@ -243,4 +263,6 @@ cor.test(fruitdat$value, fruitdat$Spring_lag)#0.17
 #previous fall, summer and spring all about the same 
 hist(fruitdat$doy)
 hist(log(fruitdat$value))
+
+
 
