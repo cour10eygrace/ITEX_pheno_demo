@@ -82,7 +82,7 @@ clim2020<-read.csv("data/Daring_raw_data/Data - Weather - Daring FTS - 2020.csv"
   select(X, Temp)
 clim2021<-read.csv("data/Daring_raw_data/Data - Weather - Daring FTS - 2021.csv")%>%slice(-1)%>%
   select(X, Temp)
-clim2022<-read.csv("data/Daring_raw_data/Data - Weather - Daring FTS - 2022 (to July).csv")%>%slice(-1)%>%
+clim2022<-read.csv("data/Daring_raw_data/Data - Weather - Daring FTS - 2022.csv")%>%slice(-1)%>%
   select(X, Temp)
 clim2<-rbind(clim2019, clim2020,clim2021, clim2022)%>%  mutate(Date=mdy_hms(X))%>%
   mutate(doy=yday(Date), month=month(Date))%>%separate(X, into=c("x", "y","year"), sep="/")%>%
