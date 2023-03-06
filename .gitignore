@@ -41,6 +41,17 @@ vignettes/*.pdf
 .Renviron
 
 #raw data until paper published 
-/data/
+#/data/
+
+#Rdata files 
+*.Rdata
+
+#data not using 
+/data/Alex_raw_data/not_using/
+/data/Daring_raw_data/not_using/
+
 #OLD scripts
 /scripts/OLD/ 
+
+#manuscript documents
+/MS_docs/
