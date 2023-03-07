@@ -5,23 +5,8 @@ library(lme4)
 library(lmerTest)
 library(optimx)
 
-
-#color pallette
-specColor <- c(
-  "#89C5DA", "#DA5724", "#74D944", "#CE50CA", "#3F4921", "#C0717C", "#CBD588", "#5F7FC7",
-  "#673770", "#D3D93E", "#38333E", "#508578", "#D7C1B1", "#689030", "#AD6F3B", "#CD9BCD",
-  "#D14285", "#6DDE88", "#652926", "#7FDCC0", "#C84248", "#8569D5", "#5E738F", "#D1A33D",
-  "#8A7C64", "#599861", "#89C5DA", "#DA5724", "#74D944", "#CE50CA", "#3F4921", "#C0717C", "#CBD588", "#5F7FC7",
-  "#673770", "#D3D93E", "#38333E", "#508578", "#D7C1B1", "#689030", "#AD6F3B", "#CD9BCD",
-  "#D14285", "#6DDE88", "#652926", "#7FDCC0", "#C84248", "#8569D5", "#5E738F", "#D1A33D",
-  "#8A7C64", "#599861")
-
 #load alex data----
 load(file='data/alex_cleaned_phen.Rdata')
-
-#OR with prior visit censored (averaged) DOYs 
-##NOT USING CURRENTLY bc no dates with ranges 11/2/22 
-#load(file='data/alex_cleaned_phen_censored.Rdata')
 
 #select columns of interest 
 #just looking at flower phenology
@@ -74,7 +59,7 @@ library(ggplot2)
 clim<-read.csv("data/Alex_raw_data/claude_climate_data_1980-2018_daily.csv")
 
 #munge 
-clim2<-mutate(clim2, Date=mdy(date))%>%
+clim2<-mutate(clim, Date=mdy(date))%>%
   mutate(doy=yday(Date), month=month(Date))%>%
   mutate(season=case_when(month==4|month==5~"Spring",
                           month==7|month==8|month==6~"Summer",
@@ -92,16 +77,25 @@ seas_clim<-select(clim2, year, season, seas_avg)%>%distinct(.)%>%
 seas_clim<-filter(seas_clim, year<2019)#2019 Claude values are off 
 
 
-alex_phen2_long<-left_join(alex_phen2_long, seas_clim)
 
-save(alex_phen2_long, file='data/AFphen_dem_climate.Rdata')
+alex_phen2_long<-left_join(alex_phen2_long, seas_clim)
 
 
 #subset for reproductive output 
-
 flower_open<-subset(alex_phen2_long, trait_simple2=="flower_no"|trait_simple2=="fruit_no")%>%
   subset(year!=2019)%>%subset(phen=="pheno_flower_mature_first")
-  
+
+
+save(alex_phen2_long, flower_open, file='data/AFphen_dem_climate.Rdata')
 
 
 
+#Fig S1
+ggplot(filter(seas_clim, year>1991 & year<2004), 
+              aes(x=as.numeric(year), y=Summer))+
+         geom_point(alpha=0.5)+
+         geom_smooth(method="lm") + theme_bw()+
+         xlab("Year")+ ylab("Growing Season temp (C)")
+
+df<-subset(seas_clim, year>1991 & year<2004)
+summary(lm(Summer~as.numeric(year), df))    
