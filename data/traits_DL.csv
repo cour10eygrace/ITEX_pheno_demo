@@ -1,0 +1,145 @@
+species ,treatment ,trait,trait_new,trait_simple,measurement_rep,trait_order
+betula,CTL,Q4_growth increment...19,growth_inc_mm,growth,1,Q4
+betula,CTL,Q4_growth increment...20,growth_inc_mm,growth,2,Q4
+betula,CTL,Q4_growth increment...21,growth_inc_mm,growth,3,Q4
+betula,CTL,Q3_leaf length...16,leaf_length_mm,leaf_length,1,Q3
+betula,CTL,Q3_leaf length...17,leaf_length_mm,leaf_length,2,Q3
+betula,CTL,Q3_leaf length...18,leaf_length_mm,leaf_length,3,Q3
+betula,CTL,Q2_no. female,num_female_catkins,repro_count,1,Q2
+betula,CTL,Q1_no. male catkins,num_male_catkins,repro_count,1,Q1
+carex,CTL,Q1_age class,flowering_stalk_age_class,age,1,Q1
+carex,CTL,Q3_leaf length (mm),leaf_length_mm,leaf_length,1,Q3
+carex,CTL,NA...16,leaf_length_mm,leaf_length,2,Q3
+carex,CTL,NA...17,leaf_length_mm,leaf_length,3,Q3
+carex,CTL,NA...18,leaf_length_mm,leaf_length,4,Q3
+carex,CTL,NA...12,leaf_length_mm,leaf_length,5,Q3
+carex,CTL,NA...15,leaf_length_mm,leaf_length,6,Q3
+carex,CTL,NA...14,leaf_length_mm,leaf_length,7,Q3
+carex,CTL,Q2_stalk length (mm),flowering_stalk_length_mm,repro_length ,1,Q2
+eriophorum,CTL,t u s s o c k  d i a m e t e r (c m ),diameter_mm,diameter,1,Q4
+eriophorum,CTL,Q4,diameter_mm,diameter,2,Q4
+eriophorum,OTC,t u s s o c k  d i a m e t e r (c m ),diameter_mm,diameter,1,Q4
+eriophorum,OTC,Q4,diameter_mm,diameter,2,Q4
+eriophorum,CTL,NA...30,leaf_length_mm,leaf_length,1,Q3
+eriophorum,CTL,NA...31,leaf_length_mm,leaf_length,2,Q3
+eriophorum,CTL,NA...32,leaf_length_mm,leaf_length,3,Q3
+eriophorum,CTL,NA...33,leaf_length_mm,leaf_length,4,Q3
+eriophorum,CTL,l e a f  l e n g t h (m m),leaf_length_mm,leaf_length,5,Q3
+eriophorum,CTL,Q3,leaf_length_mm,leaf_length,6,Q3
+eriophorum,CTL,NA...36,leaf_length_mm,leaf_length,7,Q3
+eriophorum,CTL,NA...37,leaf_length_mm,leaf_length,8,Q3
+eriophorum,CTL,NA...38,leaf_length_mm,leaf_length,9,Q3
+eriophorum,CTL,NA...39,leaf_length_mm,leaf_length,10,Q3
+eriophorum,OTC,NA...30,leaf_length_mm,leaf_length,1,Q3
+eriophorum,OTC,NA...31,leaf_length_mm,leaf_length,2,Q3
+eriophorum,OTC,NA...32,leaf_length_mm,leaf_length,3,Q3
+eriophorum,OTC,NA...33,leaf_length_mm,leaf_length,4,Q3
+eriophorum,OTC,l e a f  l e n g t h (m m),leaf_length_mm,leaf_length,5,Q3
+eriophorum,OTC,Q3,leaf_length_mm,leaf_length,6,Q3
+eriophorum,OTC,NA...36,leaf_length_mm,leaf_length,7,Q3
+eriophorum,OTC,NA...37,leaf_length_mm,leaf_length,8,Q3
+eriophorum,OTC,NA...38,leaf_length_mm,leaf_length,9,Q3
+eriophorum,OTC,NA...39,leaf_length_mm,leaf_length,10,Q3
+eriophorum,CTL,Q1_no. stalks,num_flowering_stalks,repro_count,1,Q1
+eriophorum,OTC,Q1_no. stalks,num_flowering_stalks,repro_count,1,Q1
+eriophorum,CTL,NA...10,flowering_stalk_length_mm_early,repro_length ,1,Q2
+eriophorum,CTL,e a r l y  s e a s o n  s h a f t   l e n g t h (m m),flowering_stalk_length_mm_early,repro_length ,2,Q2
+eriophorum,CTL,NA...12,flowering_stalk_length_mm_early,repro_length ,3,Q2
+eriophorum,CTL,NA...13,flowering_stalk_length_mm_early,repro_length ,4,Q2
+eriophorum,CTL,Q2...14,flowering_stalk_length_mm_early,repro_length ,5,Q2
+eriophorum,CTL,NA...15,flowering_stalk_length_mm_early,repro_length ,6,Q2
+eriophorum,CTL,NA...16,flowering_stalk_length_mm_early,repro_length ,7,Q2
+eriophorum,CTL,NA...17,flowering_stalk_length_mm_early,repro_length ,8,Q2
+eriophorum,CTL,NA...18,flowering_stalk_length_mm_early,repro_length ,9,Q2
+eriophorum,CTL,NA...19,flowering_stalk_length_mm_early,repro_length ,10,Q2
+eriophorum,OTC,NA...10,flowering_stalk_length_mm_early,repro_length ,1,Q2
+eriophorum,OTC,shaft  length @ exposed anthers (m m),flowering_stalk_length_mm_early,repro_length ,2,Q2
+eriophorum,OTC,NA...12,flowering_stalk_length_mm_early,repro_length ,3,Q2
+eriophorum,OTC,NA...13,flowering_stalk_length_mm_early,repro_length ,4,Q2
+eriophorum,OTC,Q2...14,flowering_stalk_length_mm_early,repro_length ,5,Q2
+eriophorum,OTC,NA...15,flowering_stalk_length_mm_early,repro_length ,6,Q2
+eriophorum,OTC,NA...16,flowering_stalk_length_mm_early,repro_length ,7,Q2
+eriophorum,OTC,NA...17,flowering_stalk_length_mm_early,repro_length ,8,Q2
+eriophorum,OTC,NA...18,flowering_stalk_length_mm_early,repro_length ,9,Q2
+eriophorum,OTC,NA...19,flowering_stalk_length_mm_early,repro_length ,10,Q2
+eriophorum,CTL,l a t e  s e a s o n  s h a f t   l e n g t  h (m m),flowering_stalk_length_mm_late,repro_length ,1,Q2
+eriophorum,CTL,NA...21,flowering_stalk_length_mm_late,repro_length ,2,Q2
+eriophorum,CTL,NA...22,flowering_stalk_length_mm_late,repro_length ,3,Q2
+eriophorum,CTL,Q2...23,flowering_stalk_length_mm_late,repro_length ,4,Q2
+eriophorum,CTL,NA...24,flowering_stalk_length_mm_late,repro_length ,5,Q2
+eriophorum,CTL,NA...25,flowering_stalk_length_mm_late,repro_length ,6,Q2
+eriophorum,CTL,NA...26,flowering_stalk_length_mm_late,repro_length ,7,Q2
+eriophorum,CTL,NA...27,flowering_stalk_length_mm_late,repro_length ,8,Q2
+eriophorum,CTL,NA...28,flowering_stalk_length_mm_late,repro_length ,9,Q2
+eriophorum,CTL,NA...29,flowering_stalk_length_mm_late,repro_length ,10,Q2
+eriophorum,OTC,NA...20,flowering_stalk_length_mm_late,repro_length ,1,Q2
+eriophorum,OTC,shaft length @ seed shed  (mm),flowering_stalk_length_mm_late,repro_length ,2,Q2
+eriophorum,OTC,NA...22,flowering_stalk_length_mm_late,repro_length ,3,Q2
+eriophorum,OTC,Q2...23,flowering_stalk_length_mm_late,repro_length ,4,Q2
+eriophorum,OTC,NA...24,flowering_stalk_length_mm_late,repro_length ,5,Q2
+eriophorum,OTC,NA...25,flowering_stalk_length_mm_late,repro_length ,6,Q2
+eriophorum,OTC,NA...26,flowering_stalk_length_mm_late,repro_length ,7,Q2
+eriophorum,OTC,NA...27,flowering_stalk_length_mm_late,repro_length ,8,Q2
+eriophorum,OTC,NA...28,flowering_stalk_length_mm_late,repro_length ,9,Q2
+eriophorum,OTC,NA...29,flowering_stalk_length_mm_late,repro_length ,10,Q2
+ledum,CTL,Q 4 Growth Increment(mm),growth_inc_mm,growth,1,Q4
+ledum,CTL,...24,growth_inc_mm,growth,2,Q4
+ledum,CTL,...25,growth_inc_mm,growth,3,Q4
+ledum,OTC,Q4 growth increment...25,growth_inc_mm,growth,1,Q4
+ledum,OTC,Q4 growth increment...26,growth_inc_mm,growth,2,Q4
+ledum,OTC,Q4 growth increment...27,growth_inc_mm,growth,3,Q4
+ledum,CTL,Q1 no. flowering stalks,num_flowering_stalks,num_flowering_stalks,1,Q1
+ledum,OTC,Q1 no. flowering stalks,num_flowering_stalks,num_flowering_stalks,1,Q1
+ledum,CTL,Q2 number of flowers/ stalk,num_flowers_per_stalk,num_flowers_per_stalk,1,Q2
+ledum,CTL,...15,num_flowers_per_stalk,num_flowers_per_stalk,2,Q2
+ledum,CTL,...16,num_flowers_per_stalk,num_flowers_per_stalk,3,Q2
+ledum,OTC,Q2 no. flowers/ stalk...14,num_flowers_per_stalk,num_flowers_per_stalk,1,Q2
+ledum,OTC,Q2 no. flowers/ stalk...15,num_flowers_per_stalk,num_flowers_per_stalk,2,Q2
+ledum,OTC,Q2 no. flowers/ stalk...16,num_flowers_per_stalk,num_flowers_per_stalk,3,Q2
+ledum,OTC,Q2 no. flowers/ stalk...17,num_flowers_per_stalk,num_flowers_per_stalk,4,Q2
+ledum,CTL,Q3 number of fruit / stalk,num_fruit_per_stalk,num_fruit_per_stalk,1,Q3
+ledum,CTL,...19,num_fruit_per_stalk,num_fruit_per_stalk,2,Q3
+ledum,CTL,...20,num_fruit_per_stalk,num_fruit_per_stalk,3,Q3
+ledum,OTC,Q3 no. fruit/ stalk...19,num_fruit_per_stalk,num_fruit_per_stalk,1,Q3
+ledum,OTC,Q3 no. fruit/ stalk...20,num_fruit_per_stalk,num_fruit_per_stalk,2,Q3
+ledum,OTC,Q3 no. fruit/ stalk...21,num_fruit_per_stalk,num_fruit_per_stalk,3,Q3
+ledum,OTC,Q3 no. fruit/ stalk...22,num_fruit_per_stalk,num_fruit_per_stalk,4,Q3
+oxytropis,CTL,Q2 length (mm),length_mm,diameter,1,Q2
+oxytropis,CTL,Q2 width (mm),width_mm,diameter,1,Q2
+oxytropis,CTL,Q1a no. of buds,num_flowers,num_flowers,1,Q1
+oxytropis,CTL,Q1b no. of pods,num_fruit,num_fruit,1,Q1
+salix,CTL,growth  increment (mm),growth_inc_mm,growth,1,Q6
+salix,CTL,Q6,growth_inc_mm,growth,2,Q6
+salix,CTL,NA...32,growth_inc_mm,growth,3,Q6
+salix,CTL,Q2_longest leaf (mm),leaf_length_mm,leaf_length,1,Q2
+salix,CTL,Q1_total no. catkins,num_catkins,repro_count,1,Q1
+salix,CTL,Q4_no. mature female catkins,num_mature_female_catkins,repro_count,1,Q4
+salix,CTL,m a t u r e  f e m a l e  c a t k I n  l e n g t h (m m),length_mature_female_catkins_mm,repro_length ,1,Q5
+salix,CTL,NA...16,length_mature_female_catkins_mm,repro_length ,2,Q5
+salix,CTL,NA...17,length_mature_female_catkins_mm,repro_length ,3,Q5
+salix,CTL,NA...18,length_mature_female_catkins_mm,repro_length ,4,Q5
+salix,CTL,NA...19,length_mature_female_catkins_mm,repro_length ,5,Q5
+salix,CTL,Q5,length_mature_female_catkins_mm,repro_length ,6,Q5
+salix,CTL,NA...21,length_mature_female_catkins_mm,repro_length ,7,Q5
+salix,CTL,NA...22,length_mature_female_catkins_mm,repro_length ,8,Q5
+salix,CTL,NA...23,length_mature_female_catkins_mm,repro_length ,9,Q5
+salix,CTL,NA...24,length_mature_female_catkins_mm,repro_length ,10,Q5
+salix,CTL,NA...25,length_mature_female_catkins_mm,repro_length ,11,Q5
+salix,CTL,NA...26,length_mature_female_catkins_mm,repro_length ,12,Q5
+salix,CTL,NA...27,length_mature_female_catkins_mm,repro_length ,13,Q5
+salix,CTL,NA...28,length_mature_female_catkins_mm,repro_length ,14,Q5
+salix,CTL,NA...29,length_mature_female_catkins_mm,repro_length ,15,Q5
+saxifraga,CTL,Q2 diam1,diameter_mm,diameter,1,Q2
+saxifraga,CTL,Q2 diam2,diameter_mm,diameter,2,Q2
+saxifraga,CTL,Q2 diam3,diameter_mm,diameter,3,Q2
+saxifraga,CTL,Q1 no. of flowering stalks,num_flowering_stalks,repro_count,1,Q1
+vaccinium,CTL,Q3 growth increment (mm),growth_inc_mm,growth,1,Q3
+vaccinium,CTL,...18,growth_inc_mm,growth,2,Q3
+vaccinium,CTL,...19,growth_inc_mm,growth,3,Q3
+vaccinium,OTC,Q3 growth increment...17,growth_inc_mm,growth,1,Q3
+vaccinium,OTC,Q3 growth increment...18,growth_inc_mm,growth,2,Q3
+vaccinium,OTC,Q3 growth increment...19,growth_inc_mm,growth,3,Q3
+vaccinium,CTL,Q1 no. of flowers,num_flowers,num_flowers,1,Q1
+vaccinium,OTC,Q1 no. of flowers,num_flowers,num_flowers,1,Q1
+vaccinium,CTL,Q2 no. of fruit,num_fruit,num_fruit,1,Q2
+vaccinium,OTC,Q2 no. of fruit,num_fruit,num_fruit,1,Q2

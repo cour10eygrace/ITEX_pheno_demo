@@ -1,0 +1,269 @@
+species,treatment,plantid,Notes
+oxytropis,CTL,1,1+1a=21
+oxytropis,CTL,1a,1+1a=21
+salix,CTL,102,102+102a=21
+salix,CTL,102a,102+102a=21
+salix,CTL,104,104+104a=21
+salix,CTL,104a,104+104a=21
+salix,CTL,105,105+105a=21
+salix,CTL,105a,105+105a=21
+salix,CTL,106,106+106a=21
+salix,CTL,106a,106+106a=21
+salix,CTL,107,107+107a+107b=21
+salix,CTL,107a,107+107a+107b=21
+salix,CTL,107b,107+107a+107b=21
+salix,CTL,110,110+110a=21
+salix,CTL,110a,110+110a=21
+salix,CTL,111,111+111a=21
+salix,CTL,111a,111+111a=21
+salix,CTL,112,112+112a+112b=21
+salix,CTL,112a,112+112a+112b=21
+salix,CTL,112b,112+112a+112b=21
+salix,CTL,114a,114a+114b=21
+salix,CTL,114b,114a+114b=21
+salix,CTL,115,115+115a=21
+salix,CTL,115a,115+115a=21
+salix,CTL,117,117+117a=21
+salix,CTL,117a,117+117a=21
+salix,CTL,118a,118a+118b+118c=21
+salix,CTL,118b,118a+118b+118c=21
+salix,CTL,118c,118a+118b+118c=21
+betula,CTL,130,130+130a=21
+betula,CTL,130a,130+130a=21
+betula,CTL,131a,131a+131b=21
+betula,CTL,131b,131a+131b=21
+betula,CTL,134,134+134a+134b=21
+betula,CTL,134a,134+134a+134b=21
+betula,CTL,134b,134+134a+134b=21
+betula,CTL,138,138+138a+138b=21
+betula,CTL,138a,138+138a+138b=21
+betula,CTL,138b,138+138a+138b=21
+betula,CTL,139,139+139a=21
+betula,CTL,139a,139+139a=21
+betula,CTL,142,142+142a=21
+betula,CTL,142a,142+142a=21
+oxytropis,CTL,2,2+2a=21
+oxytropis,CTL,2a,2+2a=21
+carex,CTL,207,207+207a=21
+carex,CTL,207a,207+207a=21
+oxytropis,CTL,261,died 2014
+oxytropis,CTL,10,missing 2002
+oxytropis,CTL,9a,missing 2002
+oxytropis,CTL,4,missing 2006
+salix,CTL,10,missing 2006
+betula,CTL,131,missing 2006
+carex,CTL,311,missing 2006
+carex,CTL,317,missing 2006
+oxytropis,CTL,6,"missing 2006, 2008"
+betula,CTL,132,"missing 2006,2011"
+carex,CTL,312,"missing 2006,2012"
+salix,CTL,121a,missing 2007
+oxytropis,CTL,7,missing 2008
+betula,CTL,148,missing 2010
+carex,CTL,318,missing 2010
+salix,CTL,119,"missing 2010, 2011, 2012"
+salix,CTL,119a,"missing 2010, 2011, 2012"
+betula,CTL,149a,"missing 2011,2019"
+vaccinium,OTC,17,missing 2012
+carex,CTL,320,new 2020
+carex,CTL,321,new 2020
+carex,CTL,322,new 2020
+carex,CTL,323,new 2020
+eriophorum,CTL,12,stopped tracking after 2004
+carex,CTL,306,stopped tracking after 2004
+eriophorum,CTL,1,
+eriophorum,OTC,1,
+ledum,CTL,1,
+ledum,OTC,1,
+saxifraga,CTL,1,
+vaccinium,CTL,1,
+vaccinium,OTC,1,
+eriophorum,CTL,2,
+eriophorum,OTC,2,
+ledum,CTL,2,
+ledum,OTC,2,
+saxifraga,CTL,2,
+vaccinium,CTL,2,
+vaccinium,OTC,2,
+eriophorum,OTC,3,
+ledum,CTL,3,
+ledum,OTC,3,
+oxytropis,CTL,3,
+saxifraga,CTL,3,
+vaccinium,CTL,3,
+vaccinium,OTC,3,
+eriophorum,CTL,4,
+eriophorum,OTC,4,
+ledum,CTL,4,
+ledum,OTC,4,
+saxifraga,CTL,4,
+vaccinium,CTL,4,
+vaccinium,OTC,4,
+eriophorum,CTL,5,
+eriophorum,OTC,5,
+ledum,CTL,5,
+ledum,OTC,5,
+oxytropis,CTL,5,
+saxifraga,CTL,5,
+vaccinium,CTL,5,
+vaccinium,OTC,5,
+eriophorum,CTL,6,
+eriophorum,OTC,6,
+ledum,CTL,6,
+ledum,OTC,6,
+saxifraga,CTL,6,
+vaccinium,CTL,6,
+vaccinium,OTC,6,
+eriophorum,CTL,7,
+eriophorum,OTC,7,
+ledum,CTL,7,
+ledum,OTC,7,
+saxifraga,CTL,7,
+vaccinium,CTL,7,
+vaccinium,OTC,7,
+eriophorum,CTL,8,
+eriophorum,OTC,8,
+ledum,CTL,8,
+ledum,OTC,8,
+oxytropis,CTL,8,
+saxifraga,CTL,8,
+vaccinium,CTL,8,
+vaccinium,OTC,8,
+eriophorum,CTL,9,
+eriophorum,OTC,9,
+ledum,CTL,9,
+ledum,OTC,9,
+oxytropis,CTL,9,
+saxifraga,CTL,9,
+vaccinium,CTL,9,
+vaccinium,OTC,9,
+eriophorum,CTL,10,
+eriophorum,OTC,10,
+ledum,CTL,10,
+ledum,OTC,10,
+saxifraga,CTL,10,
+vaccinium,CTL,10,
+vaccinium,OTC,10,
+eriophorum,CTL,11,
+eriophorum,OTC,11,
+ledum,CTL,11,
+ledum,OTC,11,
+saxifraga,CTL,11,
+vaccinium,CTL,11,
+vaccinium,OTC,11,
+eriophorum,OTC,12,
+ledum,CTL,12,
+ledum,OTC,12,
+saxifraga,CTL,12,
+vaccinium,CTL,12,
+vaccinium,OTC,12,
+eriophorum,CTL,13,
+eriophorum,OTC,13,
+ledum,CTL,13,
+ledum,OTC,13,
+saxifraga,CTL,13,
+vaccinium,CTL,13,
+vaccinium,OTC,13,
+eriophorum,CTL,14,
+eriophorum,OTC,14,
+ledum,CTL,14,
+ledum,OTC,14,
+saxifraga,CTL,14,
+vaccinium,CTL,14,
+vaccinium,OTC,14,
+eriophorum,CTL,15,
+eriophorum,OTC,15,
+ledum,CTL,15,
+ledum,OTC,15,
+saxifraga,CTL,15,
+vaccinium,CTL,15,
+vaccinium,OTC,15,
+eriophorum,OTC,16,
+ledum,CTL,16,
+ledum,OTC,16,
+saxifraga,CTL,16,
+vaccinium,CTL,16,
+vaccinium,OTC,16,
+eriophorum,OTC,17,
+ledum,CTL,17,
+ledum,OTC,17,
+vaccinium,CTL,17,
+eriophorum,OTC,18,
+ledum,CTL,18,
+ledum,OTC,18,
+vaccinium,CTL,18,
+vaccinium,OTC,18,
+eriophorum,OTC,19,
+ledum,CTL,19,
+ledum,OTC,19,
+vaccinium,CTL,19,
+vaccinium,OTC,19,
+eriophorum,OTC,20,
+ledum,CTL,20,
+ledum,OTC,20,
+vaccinium,CTL,20,
+vaccinium,OTC,20,
+salix,CTL,100,
+salix,CTL,103,
+salix,CTL,108,
+salix,CTL,109a,
+salix,CTL,113,
+salix,CTL,116a,
+betula,CTL,133,
+betula,CTL,135a,
+betula,CTL,136a,
+betula,CTL,137,
+betula,CTL,140,
+betula,CTL,141,
+betula,CTL,143,
+betula,CTL,144a,
+betula,CTL,145,
+betula,CTL,146,
+betula,CTL,147a,
+eriophorum,CTL,164,
+eriophorum,CTL,166,
+eriophorum,CTL,167,
+eriophorum,CTL,174,
+eriophorum,CTL,176,
+eriophorum,CTL,179,
+carex,CTL,204,
+carex,CTL,206,
+carex,CTL,208,
+carex,CTL,209,
+carex,CTL,212,
+carex,CTL,217,
+saxifraga,CTL,235,
+saxifraga,CTL,236,
+saxifraga,CTL,237,
+saxifraga,CTL,241,
+oxytropis,CTL,260,
+oxytropis,CTL,266,
+oxytropis,CTL,269,
+oxytropis,CTL,270,
+oxytropis,CTL,272,
+oxytropis,CTL,273,
+oxytropis,CTL,274,
+oxytropis,CTL,275,
+oxytropis,CTL,276,
+carex,CTL,303,
+carex,CTL,304,
+carex,CTL,305,
+carex,CTL,307,
+carex,CTL,308,
+carex,CTL,309,
+carex,CTL,310,
+carex,CTL,313,
+carex,CTL,314,
+carex,CTL,315,
+carex,CTL,316,
+carex,CTL,319,"missing 2010, 2012"
+oxytropis,CTL,10a,
+saxifraga,CTL,10a,
+saxifraga,CTL,13a,
+saxifraga,CTL,16a,
+oxytropis,CTL,261a,new plant
+eriophorum,CTL,3a,
+betula,CTL,NA,
+saxifraga,CTL,NA,
+salix,CTL,NA,
+oxytropis,CTL,NA,
