@@ -50,6 +50,10 @@ vignettes/*.pdf
 /data/Alex_raw_data/not_using/
 /data/Daring_raw_data/not_using/
 
+
+#data files too big 
+/data/Alex_raw_data/compiled_hobo/
+
 #OLD scripts
 /scripts/OLD/ 
 
