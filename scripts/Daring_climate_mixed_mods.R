@@ -141,10 +141,11 @@ Table1<-rbind(table1A, table1B, table1C, table1D)
 names(Table1)
 Table1<-select(Table1, Response,Modnames, AICc, Delta_AICc)%>%rename(Predictors=Modnames)
 
-#write.csv(Table1, "Table1.csv")
+#write.csv(Table1, "MS_docs/Table1.csv")
 
 ##look at general relationships- what do we expect?
 #change in temps over time 
+#Fig 2a
 ggplot(semdat,
        aes(x=as.numeric(year), y=Summer))+
   geom_point(alpha=0.5)+
@@ -154,6 +155,16 @@ ggplot(semdat,
 summary(lm(Summer~as.numeric(year), semdat))
 #0.116*21= 2.4 C
 
+#Fig 2b
+ggplot(semdat,
+       aes(x=Summer, y=doy, fill=species))+
+  geom_point(aes(colour=species), alpha=0.5)+
+  geom_smooth(method="lm") + theme_bw()+
+  ylab("Flowering DOY")+ xlab("Growing Season temp (C)")
+
+cor.test(semdat$Summer,semdat$doy) #-0.4
+
+#other parameters 
 #temporal trend in snow free much weaker but also higher variation (by sites)
 ggplot(semdat,
        aes(x=as.numeric(year), y=sfDOY))+
@@ -168,14 +179,6 @@ ggplot(semdat,
   geom_smooth(method='lm') 
 cor.test(semdat$Spring,semdat$doy) #-0.23
 
-#doy~Summer negative
-ggplot(semdat,
-       aes(x=Summer, y=doy, fill=species))+
-  geom_point(aes(colour=species), alpha=0.5)+
-  geom_smooth(method="lm") + theme_bw()+
-  ylab("Flowering DOY")+ xlab("Growing Season temp (C)")
-
-cor.test(semdat$Summer,semdat$doy) #-0.4
 
 #doy~Fall_lag negative (weaker)
 ggplot(semdat,
