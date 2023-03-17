@@ -83,10 +83,24 @@ alex_phen2_long<-left_join(alex_phen2_long, seas_clim)
 
 #subset for reproductive output 
 flower_open<-subset(alex_phen2_long, trait_simple2=="flower_no"|trait_simple2=="fruit_no")%>%
-  subset(year!=2019)%>%subset(phen=="pheno_flower_mature_first")
+  subset(year!=2019)%>%subset(phen=="pheno_flower_mature_first"& snow_treatment=="control"& site!="Fert") #only warming and control plots
+
+
+#put in zeroes for fruit when missing... 
+flower_openx<-group_by(flower_open, site, plot, species, plant_id,otc_treatment, trait_simple2)%>%select(-trait, -trait_simple)%>%
+  pivot_wider(names_from = trait_simple2, values_from = value, values_fn = mean) %>%#7 dups take mean 
+  mutate(fruit_no= if_else(is.na(fruit_no), 0, fruit_no))%>%  
+  mutate(fruit_no= case_when(!is.na(fruit_no)&species=="Luzula"~NA_real_, #never measured 
+                             !is.na(fruit_no)&species=="Oxyria"~NA_real_, TRUE~fruit_no))%>% 
+                               mutate(infill_fruit=if_else(fruit_no==0, "Y", "N"))
+
+#pivot back long 
+flower_open<-pivot_longer(flower_openx, cols = c(flower_no, fruit_no), names_to = "trait_simple2", values_to = "value")
 
 
 save(alex_phen2_long, flower_open, file='data/AFphen_dem_climate.Rdata')
+
+
 
 
 
