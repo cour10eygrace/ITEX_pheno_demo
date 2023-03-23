@@ -13,7 +13,7 @@ source('scripts/colorscale.R')
 
 #RUN SEMs 
 #num flowers----
-flowdat<-subset(flower_open, trait_simple2=="flower_no"& snow_treatment=="control"& site!="Fert") #no zeroes in dataset
+flowdat<-subset(flower_open, trait_simple2=="flower_no") #no zeroes in dataset
 #visualize
 ggplot(flowdat, 
        aes(x=doy, y=log(value), fill=otc_treatment))+
@@ -28,13 +28,12 @@ hist(flowdat$doy)
 
 hist(flowdat$value) #right skewed
 hist(log(flowdat$value)) #lognormal dist 
-flowdat$value2<-scale(flowdat$value)
-hist(flowdat$value2) #right skewed
+hist(scale(flowdat$value))
 
 mod1<- bf(doy~  otc_treatment +  (1|site:plot) + (1|year) + (1|species))  + gaussian()
-mod2 <- bf(value2~ otc_treatment + doy + (1|site:plot) + (1|year) + (1|species)) + gaussian()
+mod2 <- bf(value~ otc_treatment + doy + (1|site:plot) + (1|year) + (1|species)) + lognormal()
 
-flowmodOTC2<-brm(mod1+ mod2 + set_rescor(FALSE),
+flowmodOTC<-brm(mod1+ mod2 + set_rescor(FALSE),
              data = flowdat, control = list(adapt_delta=0.99, max_treedepth = 12), cores=3, chains=3, iter=2000)
 save(flowmodOTC, file="data/BRMS_SEM_output/flownumberOTC.Rdata")
 
@@ -53,11 +52,11 @@ bayestestR::ci(flowmodOTC, method="ETI", ci=c(0.85,0.9,0.95))
 
 #num fruit----
 
-fruitdat<-subset(flower_open, trait_simple2=="fruit_no" & snow_treatment=="control"& site!="Fert")#no zeroes in dataset 
+fruitdat<-subset(flower_open, trait_simple2=="fruit_no")
 
 #visualize
 ggplot(fruitdat,  
-       aes(x=doy, y=log(value), fill=otc_treatment))+
+       aes(x=doy, y=log(value+1), fill=otc_treatment))+
   geom_point(aes(colour=factor(otc_treatment)), alpha=0.5)+
   geom_smooth(method='lm') + facet_wrap(~species, scales="free")+
   theme_bw()+
@@ -69,10 +68,11 @@ fruitdat$doy<-scale(fruitdat$doy)
 hist(fruitdat$doy) #normal
 
 hist(fruitdat$value) #right skewed
-hist(log(fruitdat$value)) #lognormal
+hist(log(fruitdat$value+1)) #lognormal
+fruitdat$value<-(fruitdat$value+1) 
 
 mod1<- bf(doy~  otc_treatment +  (1|site:plot) + (1|year) + (1|species))  + gaussian()
-mod2 <- bf(value~ otc_treatment + doy + (1|site:plot) + (1|year) + (1|species)) +lognormal()
+mod2 <- bf(value~ otc_treatment + doy  + (1|site:plot) + (1|year) + (1|species)) +lognormal()
 
 fruitmodOTC<-brm(mod1+ mod2 + set_rescor(FALSE),
                 data = fruitdat, control = list(adapt_delta=0.99, max_treedepth = 12), cores=3, chains=3, iter=2000)
@@ -86,7 +86,6 @@ pp_check(fruitmodOTC, resp="value") #looks ok
 
 loo(fruitmodOTC) #good
 loo_R2(fruitmodOTC)
-
 
 vcov(fruitmodOTC, correlation=T)%>%round(digits=2) 
 bayestestR::ci(fruitmodOTC, method="ETI", ci=c(0.85,0.9,0.95))
@@ -108,6 +107,32 @@ geom_point(aes(colour=factor(otc_treatment)), alpha=0.5)+
   scale_fill_manual(values=specColor)+ scale_color_manual(values=specColor)+
   ylab("")+ xlab("DOY mature flower")
 
+
+#prob fruit---- 
+fruitdat<-mutate(fruitdat, probfruit=ifelse(value==0, 0, 1)) #set to binary response 
+hist(fruitdat$probfruit)
+
+hist(fruitdat$doy) 
+fruitdat$doy<-scale(fruitdat$doy)
+hist(fruitdat$doy, breaks = 20) 
+
+mod1<- bf(doy~  otc_treatment +  (1|site:plot) + (1|year) + (1|species))  + gaussian()
+mod2 <- bf(probfruit~ otc_treatment + doy + (1|site:plot) + (1|year) + (1|species)) + bernoulli()
+
+pfruitmod<-brm(mod1+ mod2 + set_rescor(FALSE),
+               data = fruitdat, control = list(adapt_delta=0.99, max_treedepth = 12), cores=3, chains=3, iter=2000)
+plot(pfruitmod)
+pp_check(pfruitmod, resp="doy") 
+pp_check(pfruitmod, resp="probfruit") 
+loo(pfruitmod) 
+loo_R2(pfruitmod) 
+
+ggplot(data=fruitdat, aes(x=otc_treatment, y=probfruit))+
+  geom_smooth()
+
+summary(pfruitmod)
+
+save(pfruitmod, file="data/BRMS_SEM_output/probfruit.Rdata")
 
 #RESULTS TABLES----
 rm(list=ls()) 

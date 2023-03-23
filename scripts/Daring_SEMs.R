@@ -19,6 +19,8 @@ semdat<-select(flower_open, species, year, plantid,treatment, phen, trait, value
                Spring_lag, Summer_lag, Fall_lag) 
 semdat<-subset(semdat, treatment=="CTL") #only keep control data - look at OTCs separately 
 
+semdat<-mutate(semdat, Summer_lag=if_else(is.na(Summer_lag), Summer, Summer_lag))# fill in 2001 with current year 
+
 #RUN SEMs----  
 library(lme4)
 library(lmerTest)
@@ -28,11 +30,12 @@ rstan_options(disable_march_warning = TRUE)
 rstan_options(mc.cores = parallel::detectCores())
 
 #num flowers----
-flowdat<-subset(semdat, trait2=="num_flowers" & value > 0)
+flowdat<-subset(semdat, trait2=="num_flowers" & value > 0) #must flower to have flower open phenology 
+
 
 #all species together -random intercepts
 flowdat$Summer<-scale(flowdat$Summer) 
-hist(flowdat$doy) 
+hist(flowdat$Summer) 
 flowdat$doy<-scale(flowdat$doy) 
 hist(flowdat$doy) 
 
@@ -40,6 +43,7 @@ hist(flowdat$value)
 hist(log(flowdat$value)) 
 hist(scale(log(flowdat$value))) 
 flowdat$value<-scale(log(flowdat$value)) 
+hist(flowdat$value) 
 
 mod1<- bf(doy~  Summer +  (1|species:plantid) + (1|year) + (1|species))  + gaussian()
 mod2 <- bf(value~ Summer + doy + (1|species:plantid) + (1|year) + (1|species)) + gaussian()
@@ -50,7 +54,7 @@ plot(flowmod)
 pp_check(flowmod, resp="doy") 
 pp_check(flowmod, resp="value") 
 
-save(flowmod, file="data/BRMS_SEM_output/flownumber.Rdata")
+save(flowmod, file="data/BRMS_SEM_output/flownumber_wquad.Rdata")
 loo(flowmod)
 loo_R2(flowmod)
 
@@ -60,10 +64,9 @@ vcov(flowmod, correlation=T)%>%round(digits=2) #0.4 correlation -not too bad
 
 summary(flowmod)
 
-#prob fruit----
+#num fruit----
 fruitdat<-subset(semdat, trait2=="num_fruit") 
-fruitdat<-mutate(fruitdat, probfruit=ifelse(value==0, 0, 1)) #set to binary response 
-hist(fruitdat$probfruit)
+#fruitdat2<-subset(fruitdat, value>0) #only if successfully fruited 
 
 fruitdat$Summer<-scale(fruitdat$Summer)
 fruitdat$Summer_lag<-scale(fruitdat$Summer_lag)
@@ -74,59 +77,29 @@ hist(fruitdat$doy)
 fruitdat$doy<-scale(fruitdat$doy)
 hist(fruitdat$doy, breaks = 20) 
 
-mod1<- bf(doy~  Summer + Summer_lag + (1|species:plantid) + (1|year) + (1|species))  + gaussian()
-mod2 <- bf(probfruit ~  Summer_lag + doy + (1|species:plantid) + (1|year) + (1|species)) + bernoulli()
+hist(fruitdat$value) 
+fruitdat<-subset(fruitdat, value<40) #remove outlier
+hist(fruitdat$value) 
+hist(log(fruitdat$value)) 
+hist(scale(log(fruitdat$value+1))) 
+hist(scale(fruitdat$value))
 
-pfruitmod<-brm(mod1+ mod2 + set_rescor(FALSE),
-              data = fruitdat, control = list(adapt_delta=0.99, max_treedepth = 12), cores=3, chains=3, iter=2000)
-plot(pfruitmod)
-pp_check(pfruitmod, resp="doy") 
-pp_check(pfruitmod, resp="probfruit") 
-loo(pfruitmod) 
-loo_R2(pfruitmod) 
+fruitdat$value<-scale(log(fruitdat$value+1))
+hist(fruitdat$value) 
 
-summary(pfruitmod)
-
-save(pfruitmod, file="data/BRMS_SEM_output/probfruit.Rdata")
-
-parnames(fruitmod)
-bayesplot::mcmc_pairs(as.matrix(pfruitmod),pars = c("b_doy_Summer","b_doy_Summer_lag", "b_probfruit_Summer_lag", "b_probfruit_doy"))   
-vcov(pfruitmod, correlation=T)%>%round(digits=2)
-bayestestR::ci(pfruitmod, method="ETI", ci=c(0.85,0.9,0.95))
-
-#num fruit----
-fruitdat2<-subset(fruitdat, value>0) #only if successfully fruited 
-
-fruitdat2$Summer<-scale(fruitdat2$Summer)
-fruitdat2$Summer_lag<-scale(fruitdat2$Summer_lag)
-hist(fruitdat2$Summer)
-hist(fruitdat2$Summer_lag)
-
-hist(fruitdat2$doy) 
-fruitdat2$doy<-scale(fruitdat2$doy)
-hist(fruitdat2$doy, breaks = 20) 
-
-hist(fruitdat2$value) 
-fruitdat2<-subset(fruitdat2, value<40) #remove outlier
-hist(fruitdat2$value) 
-hist(log(fruitdat2$value)) 
-hist(scale(log(fruitdat2$value))) 
-
-fruitdat2$value<-scale(log(fruitdat2$value)) 
-hist(fruitdat2$value) 
-
-unique(fruitdat2$species)#3 spp 
+unique(fruitdat$species)#3 spp 
 
 #set weak priors for num fruits 
-#priorx <- c(set_prior(prior = 'normal(0,2)', resp = "value")) 	
+priorx <- c(set_prior(prior = 'normal(0,1)', resp = "value"))
 
 mod1<- bf(doy~  Summer + Summer_lag + (1|species:plantid) + (1|year) + (1|species))  + gaussian()
-mod2 <- bf(value~  Summer_lag + doy + (1|species:plantid) + (1|year) + (1|species)) + gaussian()
+mod2 <- bf(value~  Summer_lag + doy +  (1|species:plantid) + (1|year) + (1|species)) + gaussian()
 
 fruitmod<-brm(mod1+ mod2 + set_rescor(FALSE),
-             data = fruitdat2, control = list(adapt_delta=0.99, max_treedepth = 12), cores=3, chains=3, prior=priorx, iter=2000)
+             data = fruitdat, control = list(adapt_delta=0.99, max_treedepth = 12), cores=3, chains=3, iter=2000, prior = priorx, 
+             save_pars = save_pars(all = TRUE))
 
-save(fruitmod, file="data/BRMS_SEM_output/fruitnumber.Rdata")
+save(fruitmod, file="data/BRMS_SEM_output/fruitnumber_wzeroes.Rdata")
 plot(fruitmod)
 pp_check(fruitmod, resp="doy")
 pp_check(fruitmod, resp="value") 
@@ -137,9 +110,11 @@ summary(fruitmod)
 
 parnames(fruitmod)
 bayesplot::mcmc_pairs(as.matrix(fruitmod),pars = c("b_doy_Summer","b_doy_Summer_lag", "b_value_Summer_lag", "b_value_doy"))   
-vcov(fruitmod, correlation=T)%>%round(digits=2)
+vcov(fruitmod, correlation=T)%>%round(digits=2) #0.2-0.37
 bayestestR::ci(fruitmod, method="ETI", ci=c(0.85,0.9,0.95))
 
+
+plot(hypothesis(fruitmod, "value_doy < 0")) 
 
 #simply check that fruit number and flower number correlate
 fruit_test<-subset(semdat, trait2=="num_flowers" | trait2=="num_fruit")%>%
@@ -184,6 +159,42 @@ ggplot(fruitdat, aes(x=doy, y=probfruit, fill=species))+
   geom_smooth(method='gam', formula= y ~ s(x, bs = "cs", fx = TRUE, k = 2)) + 
   theme_bw()+  #facet_wrap(~trait2,scales = "free")+ 
   ylab("Prob fruit")+ xlab("DOY flower open")
+
+
+
+#prob fruit----
+fruitdat<-subset(semdat, trait2=="num_fruit") 
+fruitdat<-mutate(fruitdat, probfruit=ifelse(value==0, 0, 1)) #set to binary response 
+hist(fruitdat$probfruit)
+
+fruitdat$Summer<-scale(fruitdat$Summer)
+fruitdat$Summer_lag<-scale(fruitdat$Summer_lag)
+hist(fruitdat$Summer)
+hist(fruitdat$Summer_lag)
+
+hist(fruitdat$doy) 
+fruitdat$doy<-scale(fruitdat$doy)
+hist(fruitdat$doy, breaks = 20) 
+
+mod1<- bf(doy~  Summer + Summer_lag + (1|species:plantid) + (1|year) + (1|species))  + gaussian()
+mod2 <- bf(probfruit ~  Summer_lag + doy + (1|species:plantid) + (1|year) + (1|species)) + bernoulli()
+
+pfruitmod<-brm(mod1+ mod2 + set_rescor(FALSE),
+               data = fruitdat, control = list(adapt_delta=0.99, max_treedepth = 12), cores=3, chains=3, iter=2000)
+plot(pfruitmod)
+pp_check(pfruitmod, resp="doy") 
+pp_check(pfruitmod, resp="probfruit") 
+loo(pfruitmod) 
+loo_R2(pfruitmod) 
+
+summary(pfruitmod)
+
+save(pfruitmod, file="data/BRMS_SEM_output/probfruit.Rdata")
+
+parnames(fruitmod)
+bayesplot::mcmc_pairs(as.matrix(pfruitmod),pars = c("b_doy_Summer","b_doy_Summer_lag", "b_probfruit_Summer_lag", "b_probfruit_doy"))   
+vcov(pfruitmod, correlation=T)%>%round(digits=2)
+bayestestR::ci(pfruitmod, method="ETI", ci=c(0.85,0.9,0.95))
 
 
 #SEMs by species----
