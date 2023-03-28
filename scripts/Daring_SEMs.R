@@ -5,6 +5,12 @@ library(ggplot2)
 library(tidyr)
 library(car)
 library(marginaleffects)
+library(ggdist)
+library(patchwork)
+library(lme4)
+library(lmerTest)
+library(brms)
+library(rstan)
 
 source("scripts/colorscale.R")
 
@@ -23,10 +29,6 @@ semdat<-subset(semdat, treatment=="CTL") #only keep control data - look at OTCs 
 semdat<-mutate(semdat, Summer_lag=if_else(is.na(Summer_lag), Summer, Summer_lag))# fill in 2001 with current year 
 
 #RUN SEMs----  
-library(lme4)
-library(lmerTest)
-library(brms)
-library(rstan)
 rstan_options(disable_march_warning = TRUE)
 rstan_options(mc.cores = parallel::detectCores())
 
@@ -136,7 +138,6 @@ bayestestR::ci(fruitmod, method="ETI", ci=c(0.85,0.9,0.95))
 
 #look at prior vs posteriors 
 #plot(hypothesis(fruitmod, "value_doy < 0")) 
-library()
 
 #simply check that fruit number and flower number correlate
 fruit_test<-subset(semdat, trait2=="num_flowers" | trait2=="num_fruit")%>%
