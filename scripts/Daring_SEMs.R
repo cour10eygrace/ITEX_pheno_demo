@@ -103,7 +103,7 @@ hist(fruitdat$value)
 unique(fruitdat$species)#3 spp 
 
 #set weak priors for doy->num fruits 
-#priorx <- c(set_prior(coef = 'IdoyE2', prior = 'uniform(-100, 0)', resp = "value")) #force quadratic as concave down 
+#priorx <- c(set_prior(coef = 'IdoyE2', prior = 'uniform(-100, 0)', resp = "value")) #force quadratic as concave down? 
 
 mod1<- bf(doy~  Summer + Summer_lag + (1|species:plantid) + (1|year) + (1|species))  + gaussian()
 mod1q<- bf(doy~  Summer + Summer_lag + I(Summer^2) +  (1|species:plantid) + (1|year) + (1|species))  + gaussian()
@@ -125,10 +125,10 @@ save(fruitmodq, file="data/BRMS_SEM_output/fruitnumber_quad.Rdata")
 pp_check(fruitmodq, resp="doy")
 pp_check(fruitmodq, resp="value") 
 
-loo1<-loo(fruitmodq)  
+loo(fruitmodq)  
 
 loo_R2(fruitmod)  
-performance::r2_bayes(fruitmod)
+performance::r2_bayes(fruitmod) #conditional and marginal R2s
 summary(fruitmodq)
 
 parnames(fruitmod)
@@ -227,29 +227,19 @@ fruitdat$FFratio<-scale(log(fruitdat$FFratio+1))
 hist(fruitdat$FFratio) 
 
 mod1<- bf(doy~  Summer + Summer_lag + (1|species:plantid) + (1|year) + (1|species))  + gaussian()
-#mod1s<- bf(doy~  Summer + Summer_lag + (1|species:plantid) + (1|year) + (Summer||species))  + gaussian()
-
 mod2 <- bf(FFratio~  Summer_lag + doy +  (1|species:plantid) + (1|year) + (1|species)) + gaussian()
-#mod2s <- bf(FFratio~  Summer_lag + doy +  (1|species:plantid) + (1|year) + (doy||species) + (Summer-1||species) ) + gaussian()
 
 ratiomod<-brm(mod1+ mod2 + set_rescor(FALSE),
               data = fruitdat, control = list(adapt_delta=0.99, max_treedepth = 12), cores=3, chains=3, iter=2000,  
               save_pars = save_pars(all = TRUE))
-#ratiomods<-brm(mod1s+ mod2s+ set_rescor(FALSE),
-#               data = fruitdat, control = list(adapt_delta=0.99, max_treedepth = 12), cores=3, chains=3, iter=2000,  
-#               save_pars = save_pars(all = TRUE))
 
 save(ratiomod, file="data/BRMS_SEM_output/FFratio.Rdata")
-#save(ratiomod, file="data/BRMS_SEM_output/FFratio_rslopes.Rdata")
 
 pp_check(ratiomod, resp="doy")
-#pp_check(ratiomods, resp="doy")
-
 pp_check(ratiomod, resp="FFratio") #pretty bad 
-#pp_check(ratiomods, resp="") 
 
-loo1<-loo(fruitmod)  
-#loo2<-loo(fruitmods)  
+
+loo(fruitmod)  
 
 loo_R2(ratiomod)  
 performance::r2_bayes(ratiomod)

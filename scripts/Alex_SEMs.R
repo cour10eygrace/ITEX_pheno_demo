@@ -14,9 +14,8 @@ source('scripts/colorscale.R')
 #RUN SEMs 
 #num flowers----
 flowdat<-subset(flower_open, trait_simple2=="flower_no") #no zeroes in dataset
-#remove Luzula 1992- weird counts all much higher (possibly were cumsums)
+#remove Luzula 1992- weird counts all much higher (possibly were cumsums- Greg)
 flowdat<-mutate(flowdat, value=if_else(species=="Luzula"&year==1992, NA_real_, value))
-
 
 #visualize
 ggplot(flowdat, 
@@ -24,7 +23,7 @@ ggplot(flowdat,
   geom_point(aes(colour=factor(otc_treatment)), alpha=0.5)+
   geom_smooth(method='lm') + facet_wrap(~species, scales="free")+ theme_bw()+
   scale_fill_manual(values=specColor)+ scale_color_manual(values=specColor)+
-  ylab("Num flowers (log)")+ xlab("DOY mature flower") #Luzula has strong positive slope-keep??
+  ylab("Num flowers (log)")+ xlab("DOY mature flower")
 
 hist(flowdat$doy) 
 flowdat$doy<-scale(flowdat$doy) 
@@ -40,7 +39,7 @@ mod2 <- bf(value~ otc_treatment + doy + (1|site:plot) + (1|year) + (1|species)) 
 flowmodOTC<-brm(mod1+ mod2 + set_rescor(FALSE),
                 data = flowdat, control = list(adapt_delta=0.99, max_treedepth = 12), cores=3, chains=3, iter=2000)
 save(flowmodOTC, file="data/BRMS_SEM_output/flownumberOTC.Rdata")
-summary(flowmodOTC) #effect of phenology is weaker , overall patterns differ more across spp (see plot above)
+summary(flowmodOTC) 
 
 #w quadratic term 
 mod2q <- bf(value~ otc_treatment + doy + I(doy^2) + (1|site:plot) + (1|year) + (1|species)) + lognormal()
@@ -59,7 +58,7 @@ loo_R2(flowmodOTC)
 vcov(flowmodOTC, correlation=T)%>%round(digits=2) 
 bayestestR::ci(flowmodOTC, method="ETI", ci=c(0.85,0.9,0.95))
 
-loo_compare(loo1, loo2)#random slopes better 
+#loo_compare(loo1, loo2)
 
 #num fruit----
 fruitdat<-subset(flower_open, trait_simple2=="fruit_no")
