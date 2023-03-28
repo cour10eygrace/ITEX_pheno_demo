@@ -14,13 +14,17 @@ source('scripts/colorscale.R')
 #RUN SEMs 
 #num flowers----
 flowdat<-subset(flower_open, trait_simple2=="flower_no") #no zeroes in dataset
+#remove Luzula 1992- weird counts all much higher (possibly were cumsums)
+flowdat<-mutate(flowdat, value=if_else(species=="Luzula"&year==1992, NA_real_, value))
+
+
 #visualize
 ggplot(flowdat, 
        aes(x=doy, y=log(value), fill=otc_treatment))+
   geom_point(aes(colour=factor(otc_treatment)), alpha=0.5)+
   geom_smooth(method='lm') + facet_wrap(~species, scales="free")+ theme_bw()+
   scale_fill_manual(values=specColor)+ scale_color_manual(values=specColor)+
-  ylab("Num flowers (log)")+ xlab("DOY mature flower")
+  ylab("Num flowers (log)")+ xlab("DOY mature flower") #Luzula has strong positive slope-keep??
 
 hist(flowdat$doy) 
 flowdat$doy<-scale(flowdat$doy) 
@@ -28,30 +32,36 @@ hist(flowdat$doy)
 
 hist(flowdat$value) #right skewed
 hist(log(flowdat$value)) #lognormal dist 
-hist(scale(flowdat$value))
+hist(scale(log(flowdat$value)))
 
 mod1<- bf(doy~  otc_treatment +  (1|site:plot) + (1|year) + (1|species))  + gaussian()
 mod2 <- bf(value~ otc_treatment + doy + (1|site:plot) + (1|year) + (1|species)) + lognormal()
 
 flowmodOTC<-brm(mod1+ mod2 + set_rescor(FALSE),
-             data = flowdat, control = list(adapt_delta=0.99, max_treedepth = 12), cores=3, chains=3, iter=2000)
+                data = flowdat, control = list(adapt_delta=0.99, max_treedepth = 12), cores=3, chains=3, iter=2000)
 save(flowmodOTC, file="data/BRMS_SEM_output/flownumberOTC.Rdata")
+summary(flowmodOTC) #effect of phenology is weaker , overall patterns differ more across spp (see plot above)
 
-summary(flowmodOTC) #effect of phenology is weaker, overall patterns differ more across spp (see plot above)
+#w quadratic term 
+mod2q <- bf(value~ otc_treatment + doy + I(doy^2) + (1|site:plot) + (1|year) + (1|species)) + lognormal()
+flowmodOTCq<-brm(mod1+ mod2q + set_rescor(FALSE),
+                 data = flowdat, control = list(adapt_delta=0.99, max_treedepth = 12), cores=3, chains=3, iter=2000)
+summary(flowmodOTCq)
+save(flowmodOTCq, file="data/BRMS_SEM_output/flownumberOTC_quad.Rdata")
 
 plot(flowmodOTC)
 pp_check(flowmodOTC, resp="doy") #good
-pp_check(flowmodOTC2, resp="value2") #looks good lognormal
+pp_check(flowmodOTCs, resp="value") #looks good lognormal
 
-loo(flowmodOTC)
+loo(flowmodOTCs)
 loo_R2(flowmodOTC)
 
 vcov(flowmodOTC, correlation=T)%>%round(digits=2) 
 bayestestR::ci(flowmodOTC, method="ETI", ci=c(0.85,0.9,0.95))
 
+loo_compare(loo1, loo2)#random slopes better 
 
 #num fruit----
-
 fruitdat<-subset(flower_open, trait_simple2=="fruit_no")
 
 #visualize
@@ -70,27 +80,64 @@ hist(fruitdat$doy) #normal
 hist(fruitdat$value) #right skewed
 hist(log(fruitdat$value+1)) #lognormal
 fruitdat$value<-(fruitdat$value+1) 
+hist(fruitdat$value) #right skewed
 
 mod1<- bf(doy~  otc_treatment +  (1|site:plot) + (1|year) + (1|species))  + gaussian()
 mod2 <- bf(value~ otc_treatment + doy  + (1|site:plot) + (1|year) + (1|species)) +lognormal()
+
 
 fruitmodOTC<-brm(mod1+ mod2 + set_rescor(FALSE),
                 data = fruitdat, control = list(adapt_delta=0.99, max_treedepth = 12), cores=3, chains=3, iter=2000)
 save(fruitmodOTC, file="data/BRMS_SEM_output/fruitnumberOTC.Rdata")
 
-summary(fruitmodOTC)
+fruitmodOTCq<-brm(mod1+ mod2q + set_rescor(FALSE),
+                 data = fruitdat, control = list(adapt_delta=0.99, max_treedepth = 12), cores=3, chains=3, iter=2000)
+save(fruitmodOTCq, file="data/BRMS_SEM_output/fruitnumberOTC_quad.Rdata")
+
+summary(fruitmodOTCq)
 
 plot(fruitmodOTC)
 pp_check(fruitmodOTC, resp="doy") #good
-pp_check(fruitmodOTC, resp="value") #looks ok
+pp_check(fruitmodOTCq, resp="value") #looks ok
 
-loo(fruitmodOTC) #good
+loo(fruitmodOTCs) #good
 loo_R2(fruitmodOTC)
 
 vcov(fruitmodOTC, correlation=T)%>%round(digits=2) 
 bayestestR::ci(fruitmodOTC, method="ETI", ci=c(0.85,0.9,0.95))
+bayestestR::ci(fruitmodOTCs, method="ETI", ci=c(0.85,0.9,0.95))
+
+#loo_compare(loo1, loo2)
 
 
+#run SEM w/ both flow # & fruit num 
+flowdatx<-select(flowdat, species, year, plantid, treatment, value)%>%rename(numflow=value)
+fruitflowdat<-left_join(fruitdat, flowdatx)
+
+hist(fruitflowdat$doy)
+fruitflowdat$doy<-scale(fruitflowdat$doy)
+
+hist(scale(log(fruitflowdat$numflow)))
+fruitflowdat$numflow<-scale(log(fruitflowdat$numflow))
+
+hist(fruitflowdat$value)
+min(fruitflowdat$value)
+hist(scale(log(fruitflowdat$value+1)))
+fruitflowdat$value<-scale(log(fruitflowdat$value+1))
+
+mod1<- bf(doy~  otc_treatment+ (1|species:plantid) + (1|year) + (1|species))  + gaussian()
+mod1s<- bf(doy~  otc_treatment+ (1|species:plantid) + (1|year) + (otc_treatment||species))  + gaussian()
+
+mod2 <- bf(numflow~ otc_treatment+ doy +  (1|species:plantid) + (1|year) + (1|species)) + gaussian()
+mod2s <- bf(numflow~  otc_treatment+ doy +  (1|species:plantid) + (1|year) + (doy||species) + (otc_treatment-1||species) ) + gaussian()
+
+mod3 <- bf(value~  otc_treatment+  doy + numflow + (1|species:plantid) + (1|year) + (1|species)) + gaussian()
+mod3s <- bf(value~  otc_treatment+ doy + numflow + (1|species:plantid) + (1|year) + (doy||species) + (otc_treatment-1||species) + (numflow-1||species)) + gaussian()
+
+fruitflowmod<-brm(mod1+ mod2+ mod3+ set_rescor(FALSE),
+                  data = fruitflowdat, control = list(adapt_delta=0.99, max_treedepth = 12), cores=3, chains=3, iter=2000, 
+                  save_pars = save_pars(all = TRUE))
+summary(fruitflowmod)
 
 #plot phenology by treatment 
 ggplot(flowdat, 

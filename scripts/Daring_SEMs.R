@@ -4,6 +4,7 @@ library(tidyverse)
 library(ggplot2)
 library(tidyr)
 library(car)
+library(marginaleffects)
 
 source("scripts/colorscale.R")
 
@@ -32,8 +33,7 @@ rstan_options(mc.cores = parallel::detectCores())
 #num flowers----
 flowdat<-subset(semdat, trait2=="num_flowers" & value > 0) #must flower to have flower open phenology 
 
-
-#all species together -random intercepts
+#all species together -random intercepts 
 flowdat$Summer<-scale(flowdat$Summer) 
 hist(flowdat$Summer) 
 flowdat$doy<-scale(flowdat$doy) 
@@ -46,28 +46,37 @@ flowdat$value<-scale(log(flowdat$value))
 hist(flowdat$value) 
 
 mod1<- bf(doy~  Summer +  (1|species:plantid) + (1|year) + (1|species))  + gaussian()
+mod1q<- bf(doy~  Summer +   I(Summer^2) + (1|species:plantid) + (1|year) + (1|species))  + gaussian()
+
 mod2 <- bf(value~ Summer + doy + (1|species:plantid) + (1|year) + (1|species)) + gaussian()
+mod2q <- bf(value~ Summer + doy + I(doy^2) + I(Summer^2)+ (1|species:plantid) + (1|year) + (1|species)) + gaussian()
 
 flowmod<-brm(mod1+ mod2 + set_rescor(FALSE),
              data = flowdat, control = list(adapt_delta=0.99, max_treedepth = 12), cores=3, chains=3, iter=2000)
-plot(flowmod)
-pp_check(flowmod, resp="doy") 
-pp_check(flowmod, resp="value") 
+save(flowmod, file="data/BRMS_SEM_output/flownumber.Rdata")
 
-save(flowmod, file="data/BRMS_SEM_output/flownumber_wquad.Rdata")
-loo(flowmod)
-loo_R2(flowmod)
+flowmodq<-brm(mod1q+ mod2q + set_rescor(FALSE),
+             data = flowdat, control = list(adapt_delta=0.99, max_treedepth = 12), cores=3, chains=3, iter=2000)
+save(flowmodq, file="data/BRMS_SEM_output/flownumber_quad.Rdata")
 
-parnames(flowmod)
-bayesplot::mcmc_pairs(as.matrix(flowmod),pars = c("b_doy_Summer", "b_value_Summer","b_value_doy"))   
-vcov(flowmod, correlation=T)%>%round(digits=2) #0.4 correlation -not too bad 
 
-summary(flowmod)
+pp_check(flowmodq, resp="doy") 
+pp_check(flowmodq, resp="value") 
+
+loo1<-loo(flowmodq)
+loo_R2(flowmodq)
+performance::r2_bayes(flowmodq) #conditional and marginal R2
+
+bayesplot::mcmc_pairs(as.matrix(flowmodq),pars = c("b_doy_Summer", "b_value_Summer","b_value_doy"))   
+vcov(flowmodq, correlation=T)%>%round(digits=2) #0.38 correlation -not too bad 
+
+summary(flowmodq)
+
+#loo_compare(loo1, loo2)
 
 #num fruit----
 fruitdat<-subset(semdat, trait2=="num_fruit") 
-#fruitdat2<-subset(fruitdat, value>0) #only if successfully fruited 
-
+#fruitdat<-subset(fruitdat, value>0) #only if successfully fruited 
 fruitdat$Summer<-scale(fruitdat$Summer)
 fruitdat$Summer_lag<-scale(fruitdat$Summer_lag)
 hist(fruitdat$Summer)
@@ -85,82 +94,200 @@ hist(scale(log(fruitdat$value+1)))
 hist(scale(fruitdat$value))
 
 fruitdat$value<-scale(log(fruitdat$value+1))
+#fruitdat$value<-scale(log(fruitdat$value)) #without zeroes
+
 hist(fruitdat$value) 
 
 unique(fruitdat$species)#3 spp 
 
-#set weak priors for num fruits 
-priorx <- c(set_prior(prior = 'normal(0,1)', resp = "value"))
+#set weak priors for doy->num fruits 
+#priorx <- c(set_prior(coef = 'IdoyE2', prior = 'uniform(-100, 0)', resp = "value")) #force quadratic as concave down 
 
 mod1<- bf(doy~  Summer + Summer_lag + (1|species:plantid) + (1|year) + (1|species))  + gaussian()
+mod1q<- bf(doy~  Summer + Summer_lag + I(Summer^2) +  (1|species:plantid) + (1|year) + (1|species))  + gaussian()
+
 mod2 <- bf(value~  Summer_lag + doy +  (1|species:plantid) + (1|year) + (1|species)) + gaussian()
+mod2q<- bf(value~  Summer_lag + doy + I(doy^2)  + I(Summer_lag^2) + (1|species:plantid) + (1|year) + (1|species)) + gaussian()
 
 fruitmod<-brm(mod1+ mod2 + set_rescor(FALSE),
-             data = fruitdat, control = list(adapt_delta=0.99, max_treedepth = 12), cores=3, chains=3, iter=2000, prior = priorx, 
+             data = fruitdat, control = list(adapt_delta=0.99, max_treedepth = 12), cores=3, chains=3, iter=2000, #prior = priorx,  sample_prior = TRUE,  
              save_pars = save_pars(all = TRUE))
+save(fruitmod, file="data/BRMS_SEM_output/fruitnumber.Rdata")
 
-save(fruitmod, file="data/BRMS_SEM_output/fruitnumber_wzeroes.Rdata")
-plot(fruitmod)
-pp_check(fruitmod, resp="doy")
-pp_check(fruitmod, resp="value") 
+fruitmodq<-brm(mod1q+ mod2q + set_rescor(FALSE),
+              data = fruitdat, control = list(adapt_delta=0.99, max_treedepth = 12), cores=3, chains=3, iter=2000, #prior = priorx,  sample_prior = TRUE,  
+              save_pars = save_pars(all = TRUE))
 
-loo(fruitmod)  
+save(fruitmodq, file="data/BRMS_SEM_output/fruitnumber_quad.Rdata")
+
+pp_check(fruitmodq, resp="doy")
+pp_check(fruitmodq, resp="value") 
+
+loo1<-loo(fruitmodq)  
+
 loo_R2(fruitmod)  
-summary(fruitmod)
+performance::r2_bayes(fruitmod)
+summary(fruitmodq)
 
 parnames(fruitmod)
 bayesplot::mcmc_pairs(as.matrix(fruitmod),pars = c("b_doy_Summer","b_doy_Summer_lag", "b_value_Summer_lag", "b_value_doy"))   
 vcov(fruitmod, correlation=T)%>%round(digits=2) #0.2-0.37
 bayestestR::ci(fruitmod, method="ETI", ci=c(0.85,0.9,0.95))
 
-
-plot(hypothesis(fruitmod, "value_doy < 0")) 
+#look at prior vs posteriors 
+#plot(hypothesis(fruitmod, "value_doy < 0")) 
+library()
 
 #simply check that fruit number and flower number correlate
 fruit_test<-subset(semdat, trait2=="num_flowers" | trait2=="num_fruit")%>%
   select(species, year, plantid, value, trait2)%>% pivot_wider(names_from = "trait2", values_from = "value")%>%
-  subset(num_flowers>0)
+  subset(num_flowers>0)%>%
+  mutate(FFratio=num_fruit/num_flowers)
 
-plot(log(fruit_test$num_flowers)~log(fruit_test$num_fruit))
+plot(log(fruit_test$num_flowers)~log(fruit_test$num_fruit+1))
 cor.test(fruit_test$num_flowers, fruit_test$num_fruit)
 
 ggplot(subset(fruit_test, !is.na(num_fruit)),
-       aes(x=log(num_flowers), y=log(num_fruit)))+
+       aes(x=log(num_flowers), y=log(num_fruit+1)))+
   geom_point( alpha=0.5)+
   geom_smooth(method='lm') + facet_wrap(~species, scales="free")+ theme_bw()+
- ylab("Num fruit (log)")+ xlab("Num flowers (log)")
+  ylab("Num fruit (log)")+ xlab("Num flowers (log)")
 #yes (to varying degrees across spp) but overall clear pattern
 
+
 #Supp fig 2
-
 ggplot(flowdat, aes(x=doy, y=log(value), fill=species))+
-         geom_point(aes(colour=species), alpha=0.5)+
-         #  geom_smooth(method = lm, formula = y ~ splines::bs(x, 3)) + #cubic spline
-         geom_smooth(method='lm') +
-         scale_fill_manual(values=specColor)+ scale_color_manual(values=specColor)+
-         #geom_smooth(method='gam', formula= y ~ s(x, bs = "cs", fx = TRUE, k = 2)) + 
-         theme_bw()+  #facet_wrap(~trait2,scales = "free")+ 
-         ylab("Num flowers (log)")+ xlab("DOY flower open")
-       
-ggplot(fruitdat2, aes(x=doy, y=log(value), fill=species))+
-  geom_point(aes(colour=species), alpha=0.5)+
-   #geom_smooth(method = lm, formula = y ~ splines::bs(x, 3)) + #cubic spline
-  geom_smooth(method='lm') +
-  scale_fill_manual(values=specColor)+ scale_color_manual(values=specColor)+
- # geom_smooth(method='gam', formula= y ~ s(x, bs = "cs", fx = TRUE, k = 2)) + 
-  theme_bw()+  #facet_wrap(~trait2,scales = "free")+ 
-  ylab("Num fruit (log)")+ xlab("DOY flower open")
-
-ggplot(fruitdat, aes(x=doy, y=probfruit, fill=species))+
   geom_point(aes(colour=species), alpha=0.5)+
   #  geom_smooth(method = lm, formula = y ~ splines::bs(x, 3)) + #cubic spline
-  #geom_smooth() +
+  geom_smooth(method='lm') +
+  scale_fill_manual(values=specColor)+ scale_color_manual(values=specColor)+
+  #geom_smooth(method='gam', formula= y ~ s(x, bs = "cs", fx = TRUE, k = 2)) + 
+  theme_bw()+  #facet_wrap(~trait2,scales = "free")+ 
+  ylab("Num flowers (log)")+ xlab("DOY flower open")
+
+ggplot(flowdat, aes(x=doy, y=log(value)))+
+  geom_point(aes(colour=species), alpha=0.5)+
+  #  geom_smooth(method = lm, formula = y ~ splines::bs(x, 3)) + #cubic spline
+  geom_smooth(method='lm') +
   scale_fill_manual(values=specColor)+ scale_color_manual(values=specColor)+
   geom_smooth(method='gam', formula= y ~ s(x, bs = "cs", fx = TRUE, k = 2)) + 
   theme_bw()+  #facet_wrap(~trait2,scales = "free")+ 
-  ylab("Prob fruit")+ xlab("DOY flower open")
+  ylab("Num flowers (log)")+ xlab("DOY flower open")
+
+ggplot(fruitdat, aes(x=doy, y=log(value+1)))+
+  geom_point(aes(colour=species), alpha=0.5)+
+  #geom_smooth(method = lm, formula = y ~ splines::bs(x, 3)) + #cubic spline
+  geom_smooth(method='lm') +
+  scale_fill_manual(values=specColor)+ scale_color_manual(values=specColor)+
+  geom_smooth(method='gam', formula= y ~ s(x, bs = "cs", fx = TRUE, k = 2)) + 
+  theme_bw()+  #facet_wrap(~trait2,scales = "free")+ 
+  ylab("Num fruit (log)")+ xlab("DOY flower open")
+
+#ggplot(fruitdat, aes(x=doy, y=probfruit, fill=species))+
+#  geom_point(aes(colour=species), alpha=0.5)+
+  #  geom_smooth(method = lm, formula = y ~ splines::bs(x, 3)) + #cubic spline
+  #geom_smooth() +
+#  scale_fill_manual(values=specColor)+ scale_color_manual(values=specColor)+
+#  geom_smooth(method='gam', formula= y ~ s(x, bs = "cs", fx = TRUE, k = 2)) + 
+#  theme_bw()+  #facet_wrap(~trait2,scales = "free")+ 
+#  ylab("Prob fruit")+ xlab("DOY flower open")
 
 
+
+
+#fruit set-fruit:flower ratio----
+fruitdat<-subset(semdat, trait2=="num_fruit")
+fruitdat<-left_join(fruitdat, select(fruit_test, treatment, species, year, plantid, FFratio)) #can include zero 
+
+ggplot(fruitdat, aes(x=doy, y=FFratio))+
+  geom_point(aes(colour=species), alpha=0.5)+
+  geom_smooth(method='lm') +
+  scale_fill_manual(values=specColor)+ scale_color_manual(values=specColor)+
+  geom_smooth(method='gam', formula= y ~ s(x, bs = "cs", fx = TRUE, k = 2)) + 
+  theme_bw()+  #facet_wrap(~trait2,scales = "free")+ 
+  ylab("Fruit:flower (log)")+ xlab("DOY flower open")+ ylim(0,4.5)
+
+fruitdat$Summer<-scale(fruitdat$Summer)
+fruitdat$Summer_lag<-scale(fruitdat$Summer_lag)
+hist(fruitdat$Summer)
+hist(fruitdat$Summer_lag)
+
+hist(fruitdat$doy) 
+fruitdat$doy<-scale(fruitdat$doy)
+hist(fruitdat$doy, breaks = 20) 
+
+hist(fruitdat$FFratio) 
+#remove outliers 
+fruitdat<-subset(fruitdat, FFratio<6)
+hist(fruitdat$FFratio) 
+hist(log(fruitdat$FFratio+1)) 
+hist(scale(log(fruitdat$FFratio+1))) #normal ish 
+fruitdat$FFratio<-scale(log(fruitdat$FFratio+1))
+hist(fruitdat$FFratio) 
+
+mod1<- bf(doy~  Summer + Summer_lag + (1|species:plantid) + (1|year) + (1|species))  + gaussian()
+#mod1s<- bf(doy~  Summer + Summer_lag + (1|species:plantid) + (1|year) + (Summer||species))  + gaussian()
+
+mod2 <- bf(FFratio~  Summer_lag + doy +  (1|species:plantid) + (1|year) + (1|species)) + gaussian()
+#mod2s <- bf(FFratio~  Summer_lag + doy +  (1|species:plantid) + (1|year) + (doy||species) + (Summer-1||species) ) + gaussian()
+
+ratiomod<-brm(mod1+ mod2 + set_rescor(FALSE),
+              data = fruitdat, control = list(adapt_delta=0.99, max_treedepth = 12), cores=3, chains=3, iter=2000,  
+              save_pars = save_pars(all = TRUE))
+#ratiomods<-brm(mod1s+ mod2s+ set_rescor(FALSE),
+#               data = fruitdat, control = list(adapt_delta=0.99, max_treedepth = 12), cores=3, chains=3, iter=2000,  
+#               save_pars = save_pars(all = TRUE))
+
+save(ratiomod, file="data/BRMS_SEM_output/FFratio.Rdata")
+#save(ratiomod, file="data/BRMS_SEM_output/FFratio_rslopes.Rdata")
+
+pp_check(ratiomod, resp="doy")
+#pp_check(ratiomods, resp="doy")
+
+pp_check(ratiomod, resp="FFratio") #pretty bad 
+#pp_check(ratiomods, resp="") 
+
+loo1<-loo(fruitmod)  
+#loo2<-loo(fruitmods)  
+
+loo_R2(ratiomod)  
+performance::r2_bayes(ratiomod)
+summary(ratiomod)
+
+parnames(ratiomod)
+bayesplot::mcmc_pairs(as.matrix(ratiomod),pars = c("b_doy_Summer","b_doy_Summer_lag", "b_value_Summer_lag", "b_value_doy"))   
+vcov(ratiomod, correlation=T)%>%round(digits=2) #0.2-0.37
+bayestestR::ci(ratiomod, method="ETI", ci=c(0.85,0.9,0.95))
+
+
+
+#run SEM w/ both flow # & fruit num - Doesn't really work b/c collinearity 
+flowdatx<-select(flowdat, species, year, plantid, treatment, value)%>%rename(numflow=value)
+fruitflowdat<-left_join(fruitdat, flowdatx)
+
+fruitflowdat$Summer<-scale(fruitflowdat$Summer)
+fruitflowdat$Summer_lag<-scale(fruitflowdat$Summer_lag)
+
+hist(fruitflowdat$doy)
+fruitflowdat$doy<-scale(fruitflowdat$doy)
+
+hist(scale(log(fruitflowdat$numflow)))
+fruitflowdat$numflow<-scale(log(fruitflowdat$numflow))
+
+hist(fruitflowdat$value)
+min(fruitflowdat$value)
+hist(scale(log(fruitflowdat$value+1)))
+fruitflowdat$value<-scale(log(fruitflowdat$value+1))
+
+mod1<- bf(doy~  Summer + Summer_lag + (1|species:plantid) + (1|year) + (1|species))  + gaussian()
+mod2 <- bf(numflow~  Summer_lag + doy +  (1|species:plantid) + (1|year) + (1|species)) + gaussian()
+mod3 <- bf(value~  Summer_lag +  doy + numflow + (1|species:plantid) + (1|year) + (1|species)) + gaussian()
+
+fruitflowmod<-brm(mod1+ mod2+ mod3+ set_rescor(FALSE),
+                  data = fruitflowdat, control = list(adapt_delta=0.99, max_treedepth = 12), cores=3, chains=3, iter=2000, 
+                  save_pars = save_pars(all = TRUE))
+summary(fruitflowmod)
+vcov(fruitflowmod, correlation=T)%>%round(digits=2) 
 
 #prob fruit----
 fruitdat<-subset(semdat, trait2=="num_fruit") 
