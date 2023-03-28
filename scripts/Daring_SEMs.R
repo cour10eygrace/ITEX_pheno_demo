@@ -139,6 +139,8 @@ bayestestR::ci(fruitmod, method="ETI", ci=c(0.85,0.9,0.95))
 #look at prior vs posteriors 
 #plot(hypothesis(fruitmod, "value_doy < 0")) 
 
+
+
 #simply check that fruit number and flower number correlate
 fruit_test<-subset(semdat, trait2=="num_flowers" | trait2=="num_fruit")%>%
   select(species, year, plantid, value, trait2)%>% pivot_wider(names_from = "trait2", values_from = "value")%>%
@@ -194,8 +196,6 @@ ggplot(fruitdat, aes(x=doy, y=log(value+1)))+
 #  ylab("Prob fruit")+ xlab("DOY flower open")
 
 
-
-
 #fruit set-fruit:flower ratio----
 fruitdat<-subset(semdat, trait2=="num_fruit")
 fruitdat<-left_join(fruitdat, select(fruit_test, treatment, species, year, plantid, FFratio)) #can include zero 
@@ -205,8 +205,8 @@ ggplot(fruitdat, aes(x=doy, y=FFratio))+
   geom_smooth(method='lm') +
   scale_fill_manual(values=specColor)+ scale_color_manual(values=specColor)+
   geom_smooth(method='gam', formula= y ~ s(x, bs = "cs", fx = TRUE, k = 2)) + 
-  theme_bw()+  #facet_wrap(~trait2,scales = "free")+ 
-  ylab("Fruit:flower (log)")+ xlab("DOY flower open")+ ylim(0,4.5)
+  theme_bw()+ # facet_wrap(~species,scales = "free")+ 
+  ylab("Fruit:flower")+ xlab("DOY flower open")+ ylim(0,4.5)
 
 fruitdat$Summer<-scale(fruitdat$Summer)
 fruitdat$Summer_lag<-scale(fruitdat$Summer_lag)
@@ -227,13 +227,22 @@ fruitdat$FFratio<-scale(log(fruitdat$FFratio+1))
 hist(fruitdat$FFratio) 
 
 mod1<- bf(doy~  Summer + Summer_lag + (1|species:plantid) + (1|year) + (1|species))  + gaussian()
-mod2 <- bf(FFratio~  Summer_lag + doy +  (1|species:plantid) + (1|year) + (1|species)) + gaussian()
+mod2 <- bf(FFratio~  Summer_lag + doy +(1|species:plantid) + (1|year) + (1|species)) + gaussian()
 
 ratiomod<-brm(mod1+ mod2 + set_rescor(FALSE),
               data = fruitdat, control = list(adapt_delta=0.99, max_treedepth = 12), cores=3, chains=3, iter=2000,  
               save_pars = save_pars(all = TRUE))
 
 save(ratiomod, file="data/BRMS_SEM_output/FFratio.Rdata")
+
+mod1q<- bf(doy~  Summer + Summer_lag + I(Summer^2) + (1|species:plantid) + (1|year) + (1|species))  + gaussian()
+mod2q <- bf(FFratio~  Summer_lag + doy + I(doy^2) +  I(Summer_lag^2)+ (1|species:plantid) + (1|year) + (1|species)) + gaussian()
+ratiomodq<-brm(mod1q+ mod2q + set_rescor(FALSE),
+              data = fruitdat, control = list(adapt_delta=0.99, max_treedepth = 12), cores=3, chains=3, iter=2000,  
+              save_pars = save_pars(all = TRUE))
+
+save(ratiomodq, file="data/BRMS_SEM_output/FFratio_quad.Rdata")
+
 
 pp_check(ratiomod, resp="doy")
 pp_check(ratiomod, resp="FFratio") #pretty bad 
