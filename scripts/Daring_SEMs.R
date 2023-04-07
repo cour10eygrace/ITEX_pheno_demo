@@ -221,15 +221,15 @@ fruitdat<-subset(fruitdat, FFratio<6)
 hist(fruitdat$FFratio+1) 
 hist(log(fruitdat$FFratio+1)) 
 hist(scale(log(fruitdat$FFratio+1))) #normal ish 
-fruitdat$FFratio<-scale(log(fruitdat$FFratio+1))
-#hist(scale(fruitdat$FFratio))
-#fruitdat$FFratio<-scale(fruitdat$FFratio)
-hist(fruitdat$FFratio, breaks=20) 
+#fruitdat$FFratio<-scale(log(fruitdat$FFratio+1))
+hist(scale(fruitdat$FFratio))
+fruitdat$FFratio<-fruitdat$FFratio +1
+hist(fruitdat$FFratio) 
 
-#fruitdat$FFratio<-fruitdat$FFratio+1
+#fruitdat$FFratio<-scale(fruitdat$FFratio)
 
 mod1<- bf(doy~  Summer + Summer_lag + (1|species:plantid) + (1|year) + (1|species))  + gaussian()
-mod2 <- bf(FFratio~  Summer_lag + doy +(1|species:plantid) + (1|year) + (1|species)) + asym_laplace()
+mod2 <- bf(FFratio~  Summer_lag + doy +(1|species:plantid) + (1|year) + (1|species)) + lognormal()
 
 testmod<-brm(mod2,  data = fruitdat, control = list(adapt_delta=0.99, max_treedepth = 12), cores=3, chains=3, iter=2000,  
           save_pars = save_pars(all = TRUE))
