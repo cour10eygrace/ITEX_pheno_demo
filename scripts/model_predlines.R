@@ -252,5 +252,5 @@ newphenclimplot<-ggplot(prednewphenclim, aes(x = (doy*14)+172, y = (draw*1.11)+2
   labs(x = "Flowering doy ",
        y = "log Flower #", title = "+5C -2days")+ theme_bw()
 
-#plot all together -Fig 6
-ggpubr::ggarrange(flowpredplot, newclimplot, newphenplot, newphenclimplot, common.legend = T) #relationship gets more steeply negative
+
+ggpubr::ggarrange(flowpredplot, newclimplot, newphenplot, newphenclimplot, common.legend = T) 
