@@ -17,6 +17,7 @@ flowdat<-subset(flower_open, trait_simple2=="flower_no") #no zeroes in dataset
 #remove Luzula 1992- weird counts all much higher (possibly were cumsums- Greg)
 flowdat<-mutate(flowdat, value=if_else(species=="Luzula"&year==1992, NA_real_, value))
 
+
 #visualize
 ggplot(flowdat, 
        aes(x=doy, y=log(value), fill=otc_treatment))+
@@ -62,6 +63,7 @@ bayestestR::ci(flowmodOTC, method="ETI", ci=c(0.85,0.9,0.95))
 
 #num fruit----
 fruitdat<-subset(flower_open, trait_simple2=="fruit_no")
+fruitdat<-mutate(fruitdat, value=if_else(species=="Dryas"&year==2003, NA_real_, value)) #only zeroes recorded for fruits this year- seems wrong 
 
 #visualize
 ggplot(fruitdat,  
@@ -83,6 +85,8 @@ hist(fruitdat$value) #right skewed
 
 mod1<- bf(doy~  otc_treatment +  (1|site:plot) + (1|year) + (1|species))  + gaussian()
 mod2 <- bf(value~ otc_treatment + doy  + (1|site:plot) + (1|year) + (1|species)) +lognormal()
+#w quadratic term 
+mod2q <- bf(value~ otc_treatment + doy + I(doy^2) + (1|site:plot) + (1|year) + (1|species)) + lognormal()
 
 
 fruitmodOTC<-brm(mod1+ mod2 + set_rescor(FALSE),
@@ -99,8 +103,8 @@ plot(fruitmodOTC)
 pp_check(fruitmodOTC, resp="doy") #good
 pp_check(fruitmodOTCq, resp="value") #looks ok
 
-loo(fruitmodOTCs) #good
-loo_R2(fruitmodOTC)
+loo(fruitmodOTC) #good
+loo_R2(fruitmodOTCq)
 
 vcov(fruitmodOTC, correlation=T)%>%round(digits=2) 
 bayestestR::ci(fruitmodOTC, method="ETI", ci=c(0.85,0.9,0.95))
@@ -108,35 +112,6 @@ bayestestR::ci(fruitmodOTCs, method="ETI", ci=c(0.85,0.9,0.95))
 
 #loo_compare(loo1, loo2)
 
-
-#run SEM w/ both flow # & fruit num 
-flowdatx<-select(flowdat, species, year, plantid, treatment, value)%>%rename(numflow=value)
-fruitflowdat<-left_join(fruitdat, flowdatx)
-
-hist(fruitflowdat$doy)
-fruitflowdat$doy<-scale(fruitflowdat$doy)
-
-hist(scale(log(fruitflowdat$numflow)))
-fruitflowdat$numflow<-scale(log(fruitflowdat$numflow))
-
-hist(fruitflowdat$value)
-min(fruitflowdat$value)
-hist(scale(log(fruitflowdat$value+1)))
-fruitflowdat$value<-scale(log(fruitflowdat$value+1))
-
-mod1<- bf(doy~  otc_treatment+ (1|species:plantid) + (1|year) + (1|species))  + gaussian()
-mod1s<- bf(doy~  otc_treatment+ (1|species:plantid) + (1|year) + (otc_treatment||species))  + gaussian()
-
-mod2 <- bf(numflow~ otc_treatment+ doy +  (1|species:plantid) + (1|year) + (1|species)) + gaussian()
-mod2s <- bf(numflow~  otc_treatment+ doy +  (1|species:plantid) + (1|year) + (doy||species) + (otc_treatment-1||species) ) + gaussian()
-
-mod3 <- bf(value~  otc_treatment+  doy + numflow + (1|species:plantid) + (1|year) + (1|species)) + gaussian()
-mod3s <- bf(value~  otc_treatment+ doy + numflow + (1|species:plantid) + (1|year) + (doy||species) + (otc_treatment-1||species) + (numflow-1||species)) + gaussian()
-
-fruitflowmod<-brm(mod1+ mod2+ mod3+ set_rescor(FALSE),
-                  data = fruitflowdat, control = list(adapt_delta=0.99, max_treedepth = 12), cores=3, chains=3, iter=2000, 
-                  save_pars = save_pars(all = TRUE))
-summary(fruitflowmod)
 
 #plot phenology by treatment 
 ggplot(flowdat, 
@@ -152,6 +127,65 @@ geom_point(aes(colour=factor(otc_treatment)), alpha=0.5)+
   geom_smooth(method='lm') + facet_wrap(~species, scales="free")+ theme_bw()+
   scale_fill_manual(values=specColor)+ scale_color_manual(values=specColor)+
   ylab("")+ xlab("DOY mature flower")
+
+
+#simply check that fruit number and flower number correlate----
+fruit_testAF<-select(flower_open, species, year, plot, site, value, trait_simple2, otc_treatment)%>% 
+  pivot_wider(names_from = "trait_simple2", values_from = "value", values_fn = 'mean')%>% #average 5 duplicates 
+  subset(flower_no>0)%>%
+  mutate(FFratio=fruit_no/flower_no)
+
+fruit_testAF<-mutate(fruit_testAF, fruit_no=if_else(species=="Dryas"&year==2003, NA_real_, fruit_no))
+
+FFfig2<-ggplot(subset(fruit_testAF, !is.na(fruit_no)),
+       aes(x=log(flower_no), y=log(fruit_no+1)))+
+  geom_point( alpha=0.5)+
+  geom_smooth(method='lm') + facet_wrap(~species, scales="free")+ theme_bw()+
+  ylab("Num fruit (log+1)")+ xlab(" ")
+#yes (to varying degrees across spp) but overall clear pattern
+
+cors2<-filter(fruit_testAF, !is.na(fruit_no))%>% group_by(species)%>%summarize(corr=cor(flower_no, fruit_no))
+
+ggpubr::ggarrange(FFfig2, FFfig, ncol = 1, common.legend = T)
+
+#Supp fig 2
+ggplot(flowdat, aes(x=doy, y=log(value), fill=species))+
+  geom_point(aes(colour=species), alpha=0.5)+
+  #  geom_smooth(method = lm, formula = y ~ splines::bs(x, 3)) + #cubic spline
+  geom_smooth(method='lm') +
+  scale_fill_manual(values=specColor)+ scale_color_manual(values=specColor)+
+  #geom_smooth(method='gam', formula= y ~ s(x, bs = "cs", fx = TRUE, k = 2)) + 
+  theme_bw()+  #facet_wrap(~trait2,scales = "free")+ 
+  ylab("Num flowers (log)")+ xlab("DOY flower open")
+
+ggplot(flowdat, aes(x=doy, y=log(value)))+
+  geom_point(aes(colour=species), alpha=0.5)+
+  #  geom_smooth(method = lm, formula = y ~ splines::bs(x, 3)) + #cubic spline
+  geom_smooth(method='lm') +
+  scale_fill_manual(values=specColor)+ scale_color_manual(values=specColor)+
+  geom_smooth(method='gam', formula= y ~ s(x, bs = "cs", fx = TRUE, k = 2)) + 
+  theme_bw()+  #facet_wrap(~trait2,scales = "free")+ 
+  ylab("Num flowers (log)")+ xlab("DOY flower open")
+
+ggplot(fruitdat, aes(x=doy, y=log(value+1)))+
+  geom_point(aes(colour=species), alpha=0.5)+
+  #geom_smooth(method = lm, formula = y ~ splines::bs(x, 3)) + #cubic spline
+  geom_smooth(method='lm') +
+  scale_fill_manual(values=specColor)+ scale_color_manual(values=specColor)+
+  geom_smooth(method='gam', formula= y ~ s(x, bs = "cs", fx = TRUE, k = 2)) + 
+  theme_bw()+  #facet_wrap(~trait2,scales = "free")+ 
+  ylab("Num fruit (log)")+ xlab("DOY flower open")
+
+#ggplot(fruitdat, aes(x=doy, y=probfruit, fill=species))+
+#  geom_point(aes(colour=species), alpha=0.5)+
+#  geom_smooth(method = lm, formula = y ~ splines::bs(x, 3)) + #cubic spline
+#geom_smooth() +
+#  scale_fill_manual(values=specColor)+ scale_color_manual(values=specColor)+
+#  geom_smooth(method='gam', formula= y ~ s(x, bs = "cs", fx = TRUE, k = 2)) + 
+#  theme_bw()+  #facet_wrap(~trait2,scales = "free")+ 
+#  ylab("Prob fruit")+ xlab("DOY flower open")
+
+
 
 
 #prob fruit---- 
