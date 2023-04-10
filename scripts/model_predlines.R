@@ -39,7 +39,7 @@ flowpredplot<-ggplot(pred, aes(x = (doy*14)+172, y = (draw*1.11)+2)) + #backcalc
   #geom_ribbon(aes(ymin = (conf.low*1.11)+2,
   #                ymax = (conf.high*1.11)+2), alpha=0.2, outline.type = "both")+
   geom_point(data=flowdat, aes(x = (doy*14)+172, y=(value*1.11)+2), alpha=0.2)+# plot raw data
-  labs(x = "Flowering doy",
+  labs(x = " ",
        y = "log Flower #")+ theme_bw()
 #between beginning of flowering to doy 190 it is better to flower earlier
 #after about DOY 190 it's not any worse to flower later (curve flattens)
@@ -123,7 +123,7 @@ flowpredplot2<-ggplot(pred, aes(x = (doy*9)+187, y = log(draw))) + #backcalculat
   #geom_ribbon(aes(ymin = log(conf.low),
   #                ymax = log(conf.high)), alpha=0.2, outline.type = "both")+
   geom_point(data=flowdat, aes(x = (doy*9)+187, y=log(value)), alpha=0.2)+# plot raw data
-  labs(x = "Flowering doy",
+  labs(x = " ",
        y = "log Flower #")+  theme_bw()
 
 
@@ -153,8 +153,8 @@ fruitpredplot2<-ggplot(pred, aes(x = (doy*9)+187, y = log(draw))) + #backcalcula
   #                ymax = log(conf.high)), alpha=0.2, outline.type = "both")+
   geom_point(data=flowdat, aes(x = (doy*9)+187, y=log(value)), alpha=0.2)+# plot raw data
   labs(x = "Flowering doy",
-       y = "log Fruit #")+  theme_bw() + 
+       y = "log Fruit #")+  theme_bw() 
 
 fruitpredplot2
 
-ggpubr::ggarrange(flowpredplot, fruitpredplot, flowpredplot2, fruitpredplot2)
+ggpubr::ggarrange(flowpredplot2,flowpredplot, fruitpredplot2, fruitpredplot,common.legend = T)
