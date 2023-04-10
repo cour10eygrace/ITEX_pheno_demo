@@ -147,11 +147,13 @@ fruit_test<-subset(semdat, trait2=="num_flowers" | trait2=="num_fruit")%>%
 plot(log(fruit_test$num_flowers)~log(fruit_test$num_fruit+1))
 cor.test(fruit_test$num_flowers, fruit_test$num_fruit)
 
-ggplot(subset(fruit_test, !is.na(num_fruit)),
+cors<-filter(fruit_test, !is.na(num_fruit))%>% group_by(species)%>%summarize(corr=cor(num_flowers, num_fruit))
+
+FFfig<-ggplot(subset(fruit_test, !is.na(num_fruit)),
        aes(x=log(num_flowers), y=log(num_fruit+1)))+
   geom_point( alpha=0.5)+
   geom_smooth(method='lm') + facet_wrap(~species, scales="free")+ theme_bw()+
-  ylab("Num fruit (log)")+ xlab("Num flowers (log)")
+  ylab("Num fruit (log+1)")+ xlab("Num flowers (log)")
 #yes (to varying degrees across spp) but overall clear pattern
 
 
