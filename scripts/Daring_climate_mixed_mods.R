@@ -145,7 +145,7 @@ Table1<-select(Table1, Response,Modnames, AICc, Delta_AICc)%>%rename(Predictors=
 
 ##look at general relationships- what do we expect?
 #change in temps over time 
-#Fig 2a
+#Fig 3a
 ggplot(semdat,
        aes(x=as.numeric(year), y=Summer))+
   geom_point(alpha=0.5)+
@@ -155,7 +155,7 @@ ggplot(semdat,
 summary(lm(Summer~as.numeric(year), semdat))
 #0.116*21= 2.4 C
 
-#Fig 2b
+
 ggplot(semdat,
        aes(x=Summer, y=doy, fill=species))+
   geom_point(aes(colour=species), alpha=0.5)+
