@@ -3,6 +3,7 @@ library(brms)
 library(marginaleffects)
 library(ggplot2)
 library(ggdist)
+source("scripts/colorscale.R")
 
 #Generate predictions on span of values from existing dataset ----
 
@@ -176,7 +177,7 @@ nd <- with(flowdat, expand.grid(Summer=unique(Summer),
                                 value=NA))#%>%
 
 pred<-predictions(flowmodq, nd, resp = "value", re_formula = NA) |> #setting RE=NA here because otherwise error ribbon is weird
-  posterior_draws()
+  posterior_draws()#%>%mutate(clim= "Current")
 
 #plot
 flowpredplot<-ggplot(pred, aes(x = (doy*14)+172, y = (draw*1.11)+2)) + #backcalculate 
@@ -190,67 +191,40 @@ flowpredplot<-ggplot(pred, aes(x = (doy*14)+172, y = (draw*1.11)+2)) + #backcalc
        y = "log Flower #", title = "Historic")+ theme_bw()
 
 
-#add 5 C to all summer temps 
-ndclim <- with(flowdat, expand.grid(Summer=unique(Summer)+5, 
+#add 1, 3, 5 C to all summer temps 
+ndclim1 <- with(flowdat, expand.grid(Summer=unique(Summer)+1, 
+                                     doy=unique(doy), 
+                                     value=NA))
+ndclim3 <- with(flowdat, expand.grid(Summer=unique(Summer)+3, 
+                                     doy=unique(doy), 
+                                     value=NA))
+
+ndclim5 <- with(flowdat, expand.grid(Summer=unique(Summer)+5, 
                                 doy=unique(doy), 
-                                # species:plantid=unique(species:plantid), 
-                                # species=unique(species), 
-                                # year=unique(year), 
                                 value=NA))#%>%
-#shift flowering time 2 days earlier (0.41*5)
-ndphen <- with(flowdat, expand.grid(Summer=unique(Summer), 
-                                    doy=unique(doy)-2, 
-                                    # species:plantid=unique(species:plantid), 
-                                    # species=unique(species), 
-                                    # year=unique(year), 
-                                    value=NA))#%>%
-#shift both 
-ndphenclim  <- with(flowdat, expand.grid(Summer=unique(Summer)+5, 
-                                               doy=unique(doy)-2, 
-                                               # species:plantid=unique(species:plantid), 
-                                               # species=unique(species), 
-                                               # year=unique(year), 
-                                               value=NA))#%>%
 
+prednewclim1<-predictions(flowmodq, ndclim1, resp = "value", re_formula = NA) |> 
+  posterior_draws() %>%mutate(clim= "+ 1C")
+prednewclim3<-predictions(flowmodq, ndclim3, resp = "value", re_formula = NA) |> 
+  posterior_draws()%>%mutate(clim= "+ 3C")
+prednewclim5<-predictions(flowmodq, ndclim5, resp = "value", re_formula = NA) |> 
+  posterior_draws()%>%mutate(clim= "+ 5C")
+prednewclim<-rbind(prednewclim1,prednewclim3, prednewclim5)
 
-prednewclim<-predictions(flowmodq, ndclim, resp = "value", re_formula = NA) |> 
-  posterior_draws()
-prednewphen<-predictions(flowmodq, ndphen, resp = "value", re_formula = NA) |> 
-  posterior_draws()
-prednewphenclim<-predictions(flowmodq, ndphenclim, resp = "value", re_formula = NA) |> 
-  posterior_draws()
-
-
-#plot
+#plot Fig 6
 newclimplot<-ggplot(prednewclim, aes(x = (doy*14)+172, y = (draw*1.11)+2)) + #backcalculate 
   
-  stat_lineribbon()+ scale_fill_brewer() +
-  #geom_smooth(method='gam', formula= y ~ s(x, bs = "cs", fx = TRUE, k = 2), se = T)+
-  #geom_ribbon(aes(ymin = (conf.low*1.11)+2,
-  #                ymax = (conf.high*1.11)+2), alpha=0.2, outline.type = "both")+
-  #geom_point(data=flowdat, aes(x = (doy*14)+172, y=(value*1.11)+2), alpha=0.2)+# plot raw data
-  labs(x = " ",
-       y = "log Flower #", title="+5C")+ theme_bw()
-
-newphenplot<-ggplot(prednewphen, aes(x = (doy*14)+172, y = (draw*1.11)+2)) + #backcalculate 
-  
-  stat_lineribbon()+ scale_fill_brewer() +
-  #geom_smooth(method='gam', formula= y ~ s(x, bs = "cs", fx = TRUE, k = 2), se = T)+
+  stat_lineribbon(alpha=0.2)+ facet_wrap(~clim)+ #scale_fill_brewer() + 
+  scale_fill_brewer() + 
+    #geom_smooth(method='gam', formula= y ~ s(x, bs = "cs", fx = TRUE, k = 2), se = T)+
   #geom_ribbon(aes(ymin = (conf.low*1.11)+2,
   #                ymax = (conf.high*1.11)+2), alpha=0.2, outline.type = "both")+
   #geom_point(data=flowdat, aes(x = (doy*14)+172, y=(value*1.11)+2), alpha=0.2)+# plot raw data
   labs(x = "Flowering doy",
-       y = "log Flower #" , title= "-2 days")+ theme_bw()
+       y = "log Flower #")+ theme_bw() #+ scale_fill_manual()
 
-newphenclimplot<-ggplot(prednewphenclim, aes(x = (doy*14)+172, y = (draw*1.11)+2)) + #backcalculate 
-  
-  stat_lineribbon()+ scale_fill_brewer() +
-  #geom_smooth(method='gam', formula= y ~ s(x, bs = "cs", fx = TRUE, k = 2), se = T)+
-  #geom_ribbon(aes(ymin = (conf.low*1.11)+2,
-  #                ymax = (conf.high*1.11)+2), alpha=0.2, outline.type = "both")+
-  #geom_point(data=flowdat, aes(x = (doy*14)+172, y=(value*1.11)+2), alpha=0.2)+# plot raw data
-  labs(x = "Flowering doy ",
-       y = "log Flower #", title = "+5C -2days")+ theme_bw()
+newclimplot+
+ #add current slope line dotted 
+   geom_smooth(data=pred, aes(x = (doy*14)+172, y = (draw*1.11)+2), 
+    method='gam', formula= y ~ s(x, bs = "cs", fx = TRUE, k = 2), se = F, lty=2, col="black")
 
-
-ggpubr::ggarrange(flowpredplot, newclimplot, newphenplot, newphenclimplot, common.legend = T) 
