@@ -4,6 +4,30 @@ library(dplyr)
 library(ggplot2)
 library(lubridate)
 
+
+#Daring data 
+load('data/DLphen_dem_climate.Rdata')
+load(file="data/Mixed_mods_df.Rdata")
+
+#add in season lags 
+flower_open<-left_join(flower_open, seas_clim)
+
+#deal with summer_lag for year 0 (2001) replace with current year Summer
+flower_open<-mutate(flower_open, Summer_lag=if_else(is.na(Summer_lag), Summer, Summer_lag))
+
+semdat<-select(flower_open, species, year, plantid, treatment, phen, trait, value, doy, sfDOY,  phen2, trait2, Spring, Fall, Summer, 
+               Spring_lag, Summer_lag, Fall_lag, Summer_diff) 
+semdat<-subset(semdat, treatment=="CTL") #only keep control data - look at OTCs separately 
+
+#Fig3a
+plota<-ggplot(semdat,
+       aes(x=as.numeric(year), y=Summer))+
+  geom_point(alpha=0.5)+
+  geom_smooth(method="lm") + theme_bw()+
+  xlab("Year")+ ylab("Growing Season temp (C)")+
+   geom_text(aes(x=2001, y=15, label = "a)"))
+
+
 # Alex data
 #import the data air temp
 #only sites with pre 2003 data 
@@ -38,8 +62,8 @@ all_air_tempx<-subset(all_air_tempx, diff>-2)
 
 mean(all_air_tempx$diff) #1.13 deg C
 
-#plot 
-ggplot(all_air_tempx,
+#plot Fig 3b
+plotb<-ggplot(all_air_tempx,
        aes(x=doy, y=diff))+
   geom_point(alpha=0.5)+
   geom_smooth(method = lm, formula = y ~ splines::bs(x, 3)) + #cubic spline
@@ -47,4 +71,7 @@ ggplot(all_air_tempx,
  # scale_fill_manual(values=specColor)+ scale_color_manual(values=specColor)+
   #geom_smooth(method='gam', formula= y ~ s(x, bs = "cs", fx = TRUE, k = 2)) + 
   theme_bw() +  #facet_wrap(~site)+ 
-  ylab("Air temp(C) OTC-CTL")+ xlab("doy")
+  ylab("Air temp(C) OTC-CTL")+ xlab("doy") + geom_text(aes(x=175, y=5, label = "b)"))
+
+#Fig 3
+ggpubr::ggarrange(plota,plotb)
