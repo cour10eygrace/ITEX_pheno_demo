@@ -3,6 +3,7 @@ library(brms)
 library(marginaleffects)
 library(ggplot2)
 library(ggdist)
+library(tidyr)
 source("scripts/colorscale.R")
 
 #Generate predictions on span of values from existing dataset ----
@@ -20,19 +21,20 @@ load("data/brms_SEM_output/fruitnumberOTC_quad.Rdata")
 summary(flowmodOTCq)#quadratic NS
 summary(fruitmodOTCq)#quadratic NS
 
+
 #Flower number DL----
 flowdat<-flowmodq$data
 flowmodq$formula
 
 #simulate some new test data from existing values
 nd <- with(flowdat, expand.grid(Summer=unique(Summer), 
-                                      doy=unique(doy), 
-                                    # species:plantid=unique(species:plantid), 
-                                    # species=unique(species), 
-                                    # year=unique(year), 
-                                    value=NA))#%>%
+                                doy=unique(doy), 
+                                # species:plantid=unique(species:plantid), 
+                                # species=unique(species), 
+                                # year=unique(year), 
+                                value=NA))#%>%
 #  slice(which(row_number() %% 200 == 1))#make much smaller n~1000
-  
+
 # Predictions
 #https://vincentarelbundock.github.io/marginaleffects/articles/brms.html#continuous-predictors
 pred<-predictions(flowmodq, nd, resp = "value", re_formula = NA) |> #setting RE=NA here because otherwise error ribbon is weird
@@ -52,26 +54,7 @@ flowpredplot<-ggplot(pred, aes(x = (doy*14)+172, y = (draw*1.11)+2)) + #backcalc
        y = "log Flower #")+ theme_bw()
 #between beginning of flowering to doy 190 it is better to flower earlier
 #after about DOY 190 it's not any worse to flower later (curve flattens)
-
-#flowpredplot
-
-
-#expected values - not using rn 
-#https://www.andrewheiss.com/blog/2022/09/26/guide-visualizing-types-posteriors/
-post_pred<- tidybayes::epred_draws(flowmodq, nd, resp = "value", re_formula =  NA) #simplify the REs
-hist(post_pred$.epred)
-hist(flowdat$value)
-
-ggplot(post_pred, aes(x = (doy*14)+172, y = (.epred*1.11)+2)) + #backcalculate 
-  
-  stat_lineribbon()+ scale_fill_brewer() +
-  #geom_smooth(method='gam', formula= y ~ s(x, bs = "cs", fx = TRUE, k = 2), se = T)+
-  #geom_ribbon(aes(ymin = (conf.low*1.11)+2,
-  #                ymax = (conf.high*1.11)+2), alpha=0.2, outline.type = "both")+
-  geom_point(data=flowdat, aes(x = (doy*14)+172, y=(value*1.11)+2), alpha=0.2)+# plot raw data
-  labs(x = "Flowering doy",
-       y = "log Flower #")+ theme_bw()
-
+flowpredplot
 
 #Fruit number DL----
 fruitdat<-fruitmodq$data
@@ -159,26 +142,36 @@ fruitpredplot2<-ggplot(pred, aes(x = (doy*9)+187, y = log(draw))) + #backcalcula
 
 #fruitpredplot2
 
-#plot all- Fig 5
+#plot all- Fig 5----
 ggpubr::ggarrange(flowpredplot2,flowpredplot, fruitpredplot2, fruitpredplot,common.legend = T)
 
 
 
 #predicted values over NEW climate/phenology data---- 
-#Use DL flower mod bc strongest slope and only sig quadratic term
+
+#Use DL flower mod bc strongest slope in phenology-fitness model and only sig quadratic term
+rm(list=ls())
+load("data/brms_SEM_output/flownumber_quad.Rdata") 
+
 flowdat<-flowmodq$data
 
+#first predict doy at AVERAGE summer temp 
+nd <- with(flowdat, expand.grid(Summer=mean(Summer), 
+                                doy=NA)) 
+
+#generate fitted doys
+doy_pred <- fitted(flowmodq, re_formula = NA, newdata = nd,
+                     resp = "doy", ndraws=1000,
+                     summary = FALSE)
+#now predict flow# at AVERAGE summer temp with fitted doys
+nd2<-with(flowdat, expand.grid(Summer=mean(Summer), 
+                                     doy=as.vector(doy_pred), value=NA)) 
+#generate predicted flow#
+pred<-predictions(flowmodq, nd2, resp = "value", re_formula = NA) |> #setting RE=NA here because otherwise error ribbon is weird
+  posterior_draws()
+
+
 #re make original plot 
-nd <- with(flowdat, expand.grid(Summer=unique(Summer), 
-                                doy=unique(doy), 
-                                # species:plantid=unique(species:plantid), 
-                                # species=unique(species), 
-                                # year=unique(year), 
-                                value=NA))#%>%
-
-pred<-predictions(flowmodq, nd, resp = "value", re_formula = NA) |> #setting RE=NA here because otherwise error ribbon is weird
-  posterior_draws()#%>%mutate(clim= "Current")
-
 #plot
 flowpredplot<-ggplot(pred, aes(x = (doy*14)+172, y = (draw*1.11)+2)) + #backcalculate 
   
@@ -192,31 +185,57 @@ flowpredplot<-ggplot(pred, aes(x = (doy*14)+172, y = (draw*1.11)+2)) + #backcalc
 
 
 #add 1, 3, 5 C to all summer temps 
-ndclim1 <- with(flowdat, expand.grid(Summer=unique(Summer)+1, 
-                                     doy=unique(doy), 
-                                     value=NA))
-ndclim3 <- with(flowdat, expand.grid(Summer=unique(Summer)+3, 
-                                     doy=unique(doy), 
-                                     value=NA))
+#AVERAGE summer temp +1
+nd <- with(flowdat, expand.grid(Summer=mean(Summer)+1, 
+                                doy=NA)) 
 
-ndclim5 <- with(flowdat, expand.grid(Summer=unique(Summer)+5, 
-                                doy=unique(doy), 
-                                value=NA))#%>%
+#generate fitted doys
+doy_pred <- fitted(flowmodq, re_formula = NA, newdata = nd,
+                   resp = "doy", ndraws=1000,
+                   summary = FALSE)
+#now predict flow# 
+nd2<-with(flowdat, expand.grid(Summer=mean(Summer)+1, 
+                               doy=as.vector(doy_pred), value=NA)) 
+#generate predicted flow#
+pred1C<-predictions(flowmodq, nd2, resp = "value", re_formula = NA) |> #setting RE=NA here because otherwise error ribbon is weird
+  posterior_draws()%>%mutate(clim= "+ 1C")
 
-prednewclim1<-predictions(flowmodq, ndclim1, resp = "value", re_formula = NA) |> 
-  posterior_draws() %>%mutate(clim= "+ 1C")
-prednewclim3<-predictions(flowmodq, ndclim3, resp = "value", re_formula = NA) |> 
+#AVERAGE summer temp +3
+nd <- with(flowdat, expand.grid(Summer=mean(Summer)+3, 
+                              doy=NA)) 
+#generate fitted doys
+doy_pred <- fitted(flowmodq, re_formula = NA, newdata = nd,
+                   resp = "doy", ndraws=1000,
+                   summary = FALSE)
+#now predict flow# 
+nd2<-with(flowdat, expand.grid(Summer=mean(Summer)+3, 
+                               doy=as.vector(doy_pred), value=NA)) 
+#generate predicted flow#
+pred3C<-predictions(flowmodq, nd2, resp = "value", re_formula = NA) |> #setting RE=NA here because otherwise error ribbon is weird
   posterior_draws()%>%mutate(clim= "+ 3C")
-prednewclim5<-predictions(flowmodq, ndclim5, resp = "value", re_formula = NA) |> 
+
+#AVERAGE summer temp +5
+nd <- with(flowdat, expand.grid(Summer=mean(Summer)+5, 
+                                doy=NA)) 
+#generate fitted doys
+doy_pred <- fitted(flowmodq, re_formula = NA, newdata = nd,
+                   resp = "doy", ndraws=1000,
+                   summary = FALSE)
+#now predict flow# 
+nd2<-with(flowdat, expand.grid(Summer=mean(Summer)+5, 
+                               doy=as.vector(doy_pred), value=NA)) 
+#generate predicted flow#
+pred5C<-predictions(flowmodq, nd2, resp = "value", re_formula = NA) |> #setting RE=NA here because otherwise error ribbon is weird
   posterior_draws()%>%mutate(clim= "+ 5C")
-prednewclim<-rbind(prednewclim1,prednewclim3, prednewclim5)
+
+prednewclim<-rbind(pred1C,pred3C, pred5C)
 
 #plot Fig 6
 newclimplot<-ggplot(prednewclim, aes(x = (doy*14)+172, y = (draw*1.11)+2)) + #backcalculate 
   
-  stat_lineribbon(alpha=0.2)+ facet_wrap(~clim)+ #scale_fill_brewer() + 
+  stat_lineribbon(alpha=0.2)+ facet_wrap(~clim, scales = "free")+ #scale_fill_brewer() + 
   scale_fill_brewer() + 
-    #geom_smooth(method='gam', formula= y ~ s(x, bs = "cs", fx = TRUE, k = 2), se = T)+
+  #geom_smooth(method='gam', formula= y ~ s(x, bs = "cs", fx = TRUE, k = 2), se = T)+
   #geom_ribbon(aes(ymin = (conf.low*1.11)+2,
   #                ymax = (conf.high*1.11)+2), alpha=0.2, outline.type = "both")+
   #geom_point(data=flowdat, aes(x = (doy*14)+172, y=(value*1.11)+2), alpha=0.2)+# plot raw data
@@ -224,7 +243,8 @@ newclimplot<-ggplot(prednewclim, aes(x = (doy*14)+172, y = (draw*1.11)+2)) + #ba
        y = "log Flower #")+ theme_bw() #+ scale_fill_manual()
 
 newclimplot+
- #add current slope line dotted 
-   geom_smooth(data=pred, aes(x = (doy*14)+172, y = (draw*1.11)+2), 
-    method='gam', formula= y ~ s(x, bs = "cs", fx = TRUE, k = 2), se = F, lty=2, col="black")
+  #add current slope line dotted 
+  geom_smooth(data=pred, aes(x = (doy*14)+172, y = (draw*1.11)+2), 
+              method='gam', formula= y ~ s(x, bs = "cs", fx = TRUE, k = 2), se = F, lty=2, col="black")
+
 
