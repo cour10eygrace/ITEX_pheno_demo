@@ -50,10 +50,10 @@ summary(flowmodOTCq)
 save(flowmodOTCq, file="data/BRMS_SEM_output/flownumberOTC_quad.Rdata")
 
 plot(flowmodOTC)
-pp_check(flowmodOTC, resp="doy") #good
-pp_check(flowmodOTCs, resp="value") #looks good lognormal
+pp_check(flowmodOTCq, resp="doy") #good
+pp_check(flowmodOTCq, resp="value") #looks good lognormal
 
-loo(flowmodOTCs)
+loo(flowmodOTCq)
 loo_R2(flowmodOTC)
 
 vcov(flowmodOTC, correlation=T)%>%round(digits=2) 
@@ -100,10 +100,10 @@ save(fruitmodOTCq, file="data/BRMS_SEM_output/fruitnumberOTC_quad.Rdata")
 summary(fruitmodOTCq)
 
 plot(fruitmodOTC)
-pp_check(fruitmodOTC, resp="doy") #good
+pp_check(fruitmodOTCq, resp="doy") #good
 pp_check(fruitmodOTCq, resp="value") #looks ok
 
-loo(fruitmodOTC) #good
+loo(fruitmodOTCq) #good
 loo_R2(fruitmodOTCq)
 
 vcov(fruitmodOTC, correlation=T)%>%round(digits=2) 

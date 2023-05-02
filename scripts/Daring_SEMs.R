@@ -60,9 +60,9 @@ save(flowmodq, file="data/BRMS_SEM_output/flownumber_quad.Rdata")
 
 
 pp_check(flowmodq, resp="doy") 
-pp_check(flowmod, resp="value") 
+pp_check(flowmodq, resp="value") 
 
-loo1<-loo(flowmodq)
+loo(flowmodq)
 loo_R2(flowmodq)
 performance::r2_bayes(flowmodq) #conditional and marginal R2
 
