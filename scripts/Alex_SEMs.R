@@ -18,7 +18,7 @@ flowdat<-subset(flower_open, trait_simple2=="flower_no") #no zeroes in dataset
 flowdat<-mutate(flowdat, value=if_else(species=="Luzula"&year==1992, NA_real_, value))
 
 
-#visualize
+#visualize -Fig S3c
 ggplot(flowdat, 
        aes(x=doy, y=log(value), fill=otc_treatment))+
   geom_point(aes(colour=factor(otc_treatment)), alpha=0.5)+
@@ -65,8 +65,8 @@ bayestestR::ci(flowmodOTC, method="ETI", ci=c(0.85,0.9,0.95))
 fruitdat<-subset(flower_open, trait_simple2=="fruit_no")
 fruitdat<-mutate(fruitdat, value=if_else(species=="Dryas"&year==2003, NA_real_, value)) #only zeroes recorded for fruits this year- seems wrong 
 
-#visualize
-ggplot(fruitdat,  
+#visualize- Fig S3d
+ggplot(subset(fruitdat, species!="Luzula"& species!="Oxyria"), 
        aes(x=doy, y=log(value+1), fill=otc_treatment))+
   geom_point(aes(colour=factor(otc_treatment)), alpha=0.5)+
   geom_smooth(method='lm') + facet_wrap(~species, scales="free")+
@@ -113,20 +113,11 @@ bayestestR::ci(fruitmodOTCs, method="ETI", ci=c(0.85,0.9,0.95))
 #loo_compare(loo1, loo2)
 
 
-#plot phenology by treatment 
+#plot phenology by treatment- Fig S2
 ggplot(flowdat, 
        aes(x=species, y=doy, fill=otc_treatment))+ 
-  geom_boxplot()+ theme_bw()
-
-ggplot(fruitdat, 
-       aes(x=species, y=doy, fill=otc_treatment))+ 
-  geom_boxplot()+ theme_bw()
-
-
-geom_point(aes(colour=factor(otc_treatment)), alpha=0.5)+
-  geom_smooth(method='lm') + facet_wrap(~species, scales="free")+ theme_bw()+
-  scale_fill_manual(values=specColor)+ scale_color_manual(values=specColor)+
-  ylab("")+ xlab("DOY mature flower")
+  geom_boxplot()+ theme_bw()+ 
+    scale_fill_manual(values=specColor)
 
 
 #simply check that fruit number and flower number correlate----
@@ -186,9 +177,7 @@ ggplot(fruitdat, aes(x=doy, y=log(value+1)))+
 #  ylab("Prob fruit")+ xlab("DOY flower open")
 
 
-
-
-#prob fruit---- 
+#prob fruit- NOT USING---- 
 fruitdat<-mutate(fruitdat, probfruit=ifelse(value==0, 0, 1)) #set to binary response 
 hist(fruitdat$probfruit)
 
