@@ -23,7 +23,7 @@ semdat<-subset(semdat, treatment=="CTL") #only keep control data - look at OTCs 
 plota<-ggplot(semdat,
        aes(x=as.numeric(year), y=Summer))+
   geom_point(alpha=0.5)+
-  geom_smooth(method="lm") + theme_bw()+
+  geom_smooth(method="lm", se = T) + theme_bw()+
   xlab("Year")+ ylab("Growing Season temp (C)")+
    geom_text(aes(x=2001, y=15, label = "a)"))
 
@@ -43,7 +43,8 @@ all_air_temp$year<-lubridate::year(all_air_temp$date)
 all_air_temp$month<-lubridate::month(all_air_temp$date)
 all_air_temp$doy<-lubridate::yday(all_air_temp$date)
 
-all_air_temp<-filter(all_air_temp, month=="6"|month=="7"|month=="8")%>%filter(year<2004) #only have 2000, 2001, 2002
+all_air_temp<-filter(all_air_temp, month=="6"|month=="7"|month=="8")%>%
+  filter(year<2004) #only have 2000, 2001, 2002
 
 names(all_air_temp)
 
@@ -66,12 +67,14 @@ mean(all_air_tempx$diff) #1.13 deg C
 plotb<-ggplot(all_air_tempx,
        aes(x=doy, y=diff))+
   geom_point(alpha=0.5)+
-  geom_smooth(method = lm, formula = y ~ splines::bs(x, 3)) + #cubic spline
-   geom_hline(yintercept=0, lty=2)+
- # scale_fill_manual(values=specColor)+ scale_color_manual(values=specColor)+
+ # geom_smooth(method = lm, formula = y ~ splines::bs(x, 3)) + #cubic spline
+  geom_smooth()+
+     geom_hline(yintercept=0, lty=2)+
+    geom_hline(yintercept=1.13, lty=2, color="red")+ #average diff 
+     # scale_fill_manual(values=specColor)+ scale_color_manual(values=specColor)+
   #geom_smooth(method='gam', formula= y ~ s(x, bs = "cs", fx = TRUE, k = 2)) + 
   theme_bw() +  #facet_wrap(~site)+ 
-  ylab("Air temp(C) OTC-CTL")+ xlab("doy") + geom_text(aes(x=175, y=5, label = "b)"))
+  ylab("Air temp(C) OTC-CTL")+ xlab("DOY") + geom_text(aes(x=175, y=5, label = "b)"))
 
 #Fig 3
 ggpubr::ggarrange(plota,plotb)

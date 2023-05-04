@@ -173,6 +173,8 @@ ggplot(semdat,
   geom_smooth(method="lm") + theme_bw()+
   xlab("Year")+ ylab("Snow free DOY")
 
+summary(lm(sfDOY~as.numeric(year), semdat))
+
 #doy~Spring negative
 ggplot(semdat,
        aes(x=Spring, y=doy))+
