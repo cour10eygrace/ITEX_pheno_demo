@@ -55,7 +55,7 @@ flowmod<-brm(mod1+ mod2 + set_rescor(FALSE),
 save(flowmod, file="data/BRMS_SEM_output/flownumber.Rdata")
 
 flowmodq<-brm(mod1q+ mod2q + set_rescor(FALSE),
-             data = flowdat, control = list(adapt_delta=0.99, max_treedepth = 12), cores=3, chains=3, iter=2000)
+             data = flowdat, control = list(adapt_delta=0.99, max_treedepth = 12), cores=3, chains=3, iter=10000)
 save(flowmodq, file="data/BRMS_SEM_output/flownumber_quad.Rdata")
 
 
@@ -115,7 +115,7 @@ save(fruitmod, file="data/BRMS_SEM_output/fruitnumber.Rdata")
 
 
 fruitmodq<-brm(mod1q+ mod2q + set_rescor(FALSE),
-              data = fruitdat, control = list(adapt_delta=0.99, max_treedepth = 12), cores=3, chains=3, iter=2000, #prior = priorx,  sample_prior = TRUE,  
+              data = fruitdat, control = list(adapt_delta=0.99, max_treedepth = 12), cores=3, chains=3, iter=10000, #prior = priorx,  sample_prior = TRUE,  
               save_pars = save_pars(all = TRUE))
 
 save(fruitmodq, file="data/BRMS_SEM_output/fruitnumber_quad.Rdata")
