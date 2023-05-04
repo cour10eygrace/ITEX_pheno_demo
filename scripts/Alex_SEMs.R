@@ -45,7 +45,7 @@ summary(flowmodOTC)
 #w quadratic term 
 mod2q <- bf(value~ otc_treatment + doy + I(doy^2) + (1|site:plot) + (1|year) + (1|species)) + lognormal()
 flowmodOTCq<-brm(mod1+ mod2q + set_rescor(FALSE),
-                 data = flowdat, control = list(adapt_delta=0.99, max_treedepth = 12), cores=3, chains=3, iter=2000)
+                 data = flowdat, control = list(adapt_delta=0.99, max_treedepth = 12), cores=3, chains=3, iter=10000)
 summary(flowmodOTCq)
 save(flowmodOTCq, file="data/BRMS_SEM_output/flownumberOTC_quad.Rdata")
 
@@ -54,7 +54,7 @@ pp_check(flowmodOTCq, resp="doy") #good
 pp_check(flowmodOTCq, resp="value") #looks good lognormal
 
 loo(flowmodOTCq)
-loo_R2(flowmodOTC)
+loo_R2(flowmodOTCq)
 
 vcov(flowmodOTC, correlation=T)%>%round(digits=2) 
 bayestestR::ci(flowmodOTC, method="ETI", ci=c(0.85,0.9,0.95))
@@ -94,7 +94,7 @@ fruitmodOTC<-brm(mod1+ mod2 + set_rescor(FALSE),
 save(fruitmodOTC, file="data/BRMS_SEM_output/fruitnumberOTC.Rdata")
 
 fruitmodOTCq<-brm(mod1+ mod2q + set_rescor(FALSE),
-                 data = fruitdat, control = list(adapt_delta=0.99, max_treedepth = 12), cores=3, chains=3, iter=2000)
+                 data = fruitdat, control = list(adapt_delta=0.99, max_treedepth = 12), cores=3, chains=3, iter=10000)
 save(fruitmodOTCq, file="data/BRMS_SEM_output/fruitnumberOTC_quad.Rdata")
 
 summary(fruitmodOTCq)
