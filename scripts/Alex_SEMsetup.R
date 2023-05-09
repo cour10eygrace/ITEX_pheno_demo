@@ -101,10 +101,8 @@ flower_open<-pivot_longer(flower_openx, cols = c(flower_no, fruit_no), names_to 
 save(alex_phen2_long, flower_open, file='data/AFphen_dem_climate.Rdata')
 
 
-
-
-
-#Fig S1
+#plot clim data over time 
+#Fig S1b
 ggplot(filter(seas_clim, year>1991 & year<2004), 
               aes(x=as.numeric(year), y=Summer))+
          geom_point(alpha=0.5)+
