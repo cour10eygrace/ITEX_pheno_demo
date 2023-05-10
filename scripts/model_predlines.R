@@ -11,16 +11,17 @@ source("scripts/colorscale.R")
 #load models 
 #Daring
 load("data/brms_SEM_output/flownumber_quad.Rdata") 
-load("data/brms_SEM_output/fruitnumber_quad_skewnorm.Rdata") 
-summary(flowmodq)#quadratic term significant 
-summary(fruitmodq) #quadratic term NS
+load("data/brms_SEM_output/fruitnumber_quad.Rdata") 
+#summary(flowmodq)#quadratic term significant 
+#summary(fruitmodq) #quadratic term NS
 #Alex
 #load models 
 load("data/brms_SEM_output/flownumberOTC_quad.Rdata")
 load("data/brms_SEM_output/fruitnumberOTC_quad.Rdata")
-summary(flowmodOTCq)#quadratic NS
-summary(fruitmodOTCq)#quadratic NS
+#summary(flowmodOTCq)#quadratic NS
+#summary(fruitmodOTCq)#quadratic NS
 
+gc() #free up mem
 
 #Flower number DL----
 flowdat<-flowmodq$data
@@ -54,7 +55,7 @@ flowpredplot<-ggplot(pred, aes(x = (doy*14)+172, y = (draw*1.11)+2)) + #backcalc
        y = "log Flower #")+ theme_bw()
 #between beginning of flowering to doy 190 it is better to flower earlier
 #after about DOY 190 it's not any worse to flower later (curve flattens)
-flowpredplot
+ gc()
 
 #Fruit number DL----
 fruitdat<-fruitmodq$data
@@ -82,7 +83,7 @@ fruitpredplot<-ggplot(pred, aes(x = (doy*9.25)+182, y = (draw*0.97)+1.9)) + #bac
        y = "log Fruit # ")+ theme_bw()
 
 #fruitpredplot
-
+gc()
 
 #Flower number AF----
 flowdat<-flowmodOTCq$data
@@ -111,7 +112,7 @@ flowpredplot2<-ggplot(pred, aes(x = (doy*9)+187, y = log(draw))) + #backcalculat
   labs(x = " ",
        y = "log Flower #")+  theme_bw()
 
-
+gc()
 #flowpredplot2
 
 #fruit number AF----
@@ -139,10 +140,17 @@ fruitpredplot2<-ggplot(pred, aes(x = (doy*9)+187, y = log(draw))) + #backcalcula
   geom_point(data=flowdat, aes(x = (doy*9)+187, y=log(value)), alpha=0.2)+# plot raw data
   labs(x = "Flowering doy",
        y = "log Fruit #")+  theme_bw() 
-
+gc()
 #fruitpredplot2
 
 #plot all- Fig 5----
+rm(flowmodOTCq)
+rm(flowmodq)
+rm(fruitmodOTCq)
+rm(fruitmodq)
+
+gc()
+
 ggpubr::ggarrange(flowpredplot2,flowpredplot, fruitpredplot2, fruitpredplot,common.legend = T)
 
 
@@ -151,6 +159,7 @@ ggpubr::ggarrange(flowpredplot2,flowpredplot, fruitpredplot2, fruitpredplot,comm
 
 #Use DL flower mod bc strongest slope in phenology-fitness model and only sig quadratic term
 rm(list=ls())
+gc()
 load("data/brms_SEM_output/flownumber_quad.Rdata") 
 
 flowdat<-flowmodq$data
@@ -183,7 +192,7 @@ flowpredplot<-ggplot(pred, aes(x = (doy*14)+172, y = (draw*1.11)+2)) + #backcalc
   labs(x = " ",
        y = "log Flower #", title = "Historic")+ theme_bw()
 
-
+gc()
 #add 1, 3, 5 C to all summer temps 
 #AVERAGE summer temp +1
 nd <- with(flowdat, expand.grid(Summer=mean(Summer)+1, 
@@ -199,7 +208,7 @@ nd2<-with(flowdat, expand.grid(Summer=mean(Summer)+1,
 #generate predicted flow#
 pred1C<-predictions(flowmodq, nd2, resp = "value", re_formula = NA) |> #setting RE=NA here because otherwise error ribbon is weird
   posterior_draws()%>%mutate(clim= "+ 1C")
-
+gc()
 #AVERAGE summer temp +3
 nd <- with(flowdat, expand.grid(Summer=mean(Summer)+3, 
                               doy=NA)) 
@@ -213,7 +222,7 @@ nd2<-with(flowdat, expand.grid(Summer=mean(Summer)+3,
 #generate predicted flow#
 pred3C<-predictions(flowmodq, nd2, resp = "value", re_formula = NA) |> #setting RE=NA here because otherwise error ribbon is weird
   posterior_draws()%>%mutate(clim= "+ 3C")
-
+gc()
 #AVERAGE summer temp +5
 nd <- with(flowdat, expand.grid(Summer=mean(Summer)+5, 
                                 doy=NA)) 
@@ -227,13 +236,14 @@ nd2<-with(flowdat, expand.grid(Summer=mean(Summer)+5,
 #generate predicted flow#
 pred5C<-predictions(flowmodq, nd2, resp = "value", re_formula = NA) |> #setting RE=NA here because otherwise error ribbon is weird
   posterior_draws()%>%mutate(clim= "+ 5C")
-
+gc()
 prednewclim<-rbind(pred1C,pred3C, pred5C)
 
 #plot Fig 6
+
 newclimplot<-ggplot(prednewclim, aes(x = (doy*14)+172, y = (draw*1.11)+2)) + #backcalculate 
   
-  stat_lineribbon(alpha=0.2)+ facet_wrap(~clim, scales = "free")+ #scale_fill_brewer() + 
+  stat_lineribbon(alpha=0.2)+ facet_wrap(~clim)+ # , scales = "free")+ #scale_fill_brewer() + 
   scale_fill_brewer() + 
   #geom_smooth(method='gam', formula= y ~ s(x, bs = "cs", fx = TRUE, k = 2), se = T)+
   #geom_ribbon(aes(ymin = (conf.low*1.11)+2,
@@ -242,9 +252,15 @@ newclimplot<-ggplot(prednewclim, aes(x = (doy*14)+172, y = (draw*1.11)+2)) + #ba
   labs(x = "Flowering doy",
        y = "log Flower #")+ theme_bw() #+ scale_fill_manual()
 
+gc()
+pdf(file = "MS_docs/Fig6x.pdf",   # The directory you want to save the file in
+    width = 12, # The width of the plot in inches
+    height = 6) # The height of the plot in inches
+
 newclimplot+
   #add current slope line dotted 
   geom_smooth(data=pred, aes(x = (doy*14)+172, y = (draw*1.11)+2), 
               method='gam', formula= y ~ s(x, bs = "cs", fx = TRUE, k = 2), se = F, lty=2, col="black")
+dev.off()
 
-
+#save(pred, prednewclim, file="data/BRMS_SEM_output/newclimate_projections.Rdata")
