@@ -67,7 +67,7 @@ clim2<-mutate(clim, Date=mdy(date))%>%
   group_by(year, season)%>%mutate(seas_avg=mean(temp_air_2m_mean, na.rm=T), n_obs=n())%>%
   select(site, plot_id, plot, date, day, year, temp_air_2m_mean, Date, doy, month, season, seas_avg, n_obs)  
 
-seas_clim<-select(clim2, year, season, seas_avg)%>%distinct(.)%>%
+seas_clim<-select(clim2, year, season, seas_avg, n_obs)%>%distinct(.)%>%
   pivot_wider(names_from = season, values_from = seas_avg)%>%ungroup(.)%>%
   arrange(year)%>%#arrange(year)%>%
   mutate(Spring_lag=lag(Spring), Summer_lag=lag(Summer), Fall_lag=lag(Fall))%>%
@@ -111,3 +111,15 @@ ggplot(filter(seas_clim, year>1991 & year<2004),
 
 df<-subset(seas_clim, year>1991 & year<2004)
 summary(lm(Summer~as.numeric(year), df))    
+
+
+#calculate avgs 
+seas_clim<-filter(seas_clim, year>2000)#to compare with starting 2001 at Daring
+seas_clim<-filter(seas_clim, n_obs>60)#remove season-years with too few obs 
+seas_clim<-seas_clim[-28, ]#remove -21 value for summer 2013 (weird outlier)
+
+mean(seas_clim$Spring, na.rm=T)
+mean(seas_clim$Summer, na.rm=T)
+mean(seas_clim$Fall, na.rm=T)
+
+

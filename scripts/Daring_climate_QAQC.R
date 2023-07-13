@@ -191,6 +191,10 @@ seas_clim<-select(clim, year, season, seas_avg)%>%distinct(.)%>%
   mutate(Summer_diff=Summer-Summer_lag)%>%
   mutate_if(is.numeric, round, digits=3) 
 
+mean(seas_clim$Spring)#-8.6
+mean(seas_clim$Summer)#10.9
+mean(seas_clim$Fall)#-0.46
+
 
 #daring_phen_longx$hobo_temp_C<-round(daring_phen_longx$hobo_temp_C, digits = 3)#all same deg freedom
 #daring_phen_longx$GDD<-round(daring_phen_longx$GDD, digits = 3)#all same deg freedom
