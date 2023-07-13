@@ -141,13 +141,14 @@ cor.test(semdat$Summer,semdat$doy) #-0.4
 #other parameters 
 #temporal trend in snow free much weaker but also higher variation (by sites)
 #Fig S1a
-ggplot(semdat,
+semdatplot<-subset(semdat,species!="carex")
+ggplot(semdatplot, 
        aes(x=as.numeric(year), y=sfDOY))+
   geom_point(alpha=0.5)+
   geom_smooth(method="lm") + theme_bw()+
   xlab("Year")+ ylab("Snow free DOY")
 
-summary(lm(sfDOY~as.numeric(year), semdat))
-
-
+mod<-(lmer(sfDOY~as.numeric(year) + (1|year), semdatplot))
+summary(mod)
+MuMIn::r.squaredGLMM(mod) 
 
