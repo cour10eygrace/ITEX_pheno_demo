@@ -263,4 +263,42 @@ newclimplot+
               method='gam', formula= y ~ s(x, bs = "cs", fx = TRUE, k = 2), se = F, lty=2, col="black")
 dev.off()
 
-#save(pred, prednewclim, file="data/BRMS_SEM_output/newclimate_projections.Rdata")
+#save(pred, pred1C, pred3C, pred5C, file="data/BRMS_SEM_output/newclimate_projections.Rdata")
+
+#backcalculate % differences in each scenario 
+#historic
+med<-median(pred$doy)
+y<-subset(pred, doy< med+0.001 & doy> med) 
+value<-((mean(y$draw))*1.11)+2 
+doy<-(med*14)+172
+
+#1c
+med1<-median(pred1C$doy)
+y1<-subset(pred1C, doy< med+0.0005 & doy> med) #warming only
+y1x<-subset(pred1C, doy< med1+0.0005 & doy> med1) #warming plus phen
+value1<-((mean(y1$draw))*1.11)+2 
+value1x<-((mean(y1x$draw))*1.11)+2 
+prop1<-exp(value1)/exp(value)*100
+prop1x<-exp(value1x)/exp(value)*100
+doy1<-(med1*14)+172
+
+#3c
+med3<-median(pred3C$doy)
+y3<-subset(pred3C, doy< med+0.1 & doy> med) #warming only
+y3x<-subset(pred3C, doy< med3+0.001 & doy> med3) #warming plus phen
+value3<-((mean(y3$draw))*1.11)+2 
+value3x<-((mean(y3x$draw))*1.11)+2 
+prop3<-exp(value3)/exp(value)*100
+prop3x<-exp(value3x)/exp(value)*100
+doy3<-(med3*14)+172
+
+#5c
+med5<-median(pred5C$doy)
+max<-max(pred5C$doy)
+y5<-subset(pred5C, doy==max) #warming only
+y5x<-subset(pred5C, doy< med5+0.001 & doy> med5) #warming plus phen
+value5<-((mean(y5$draw))*1.11)+2 
+value5x<-((mean(y5x$draw))*1.11)+2 
+prop5<-exp(value5)/exp(value)*100
+prop5x<-exp(value5x)/exp(value)*100
+doy5<-(med5*14)+172
