@@ -102,3 +102,79 @@ Table3all<-rbind(Table3, Table3x)
 
 write.csv(Table3all, "MS_docs/Table3.csv")
 
+#create tables for random intercepts 
+#Species 
+#flowering
+summary(flowmodq)
+ranef<-ranef(flowmodq)
+speciestab<-as.data.frame(ranef$species)
+speciestab$Site<-"Daring Lake"
+
+ranef2<-ranef(flowmodOTCq)
+speciestab2<-as.data.frame(ranef2$species)
+speciestab2$Site<-"Alexandra Fiord"
+
+speciestabflow<-rbind(speciestab, speciestab2)
+speciestabflow$Species<-row.names(speciestabflow)
+speciestabflow<-relocate(speciestabflow, c(Site, Species), .before = Estimate.doy_Intercept)
+speciestabflow$model<-"Flower number"
+
+#fruiting 
+ranef<-ranef(fruitmodq)
+speciestab<-as.data.frame(ranef$species)
+speciestab$Site<-"Daring Lake"
+
+ranef2<-ranef(fruitmodOTCq)
+speciestab2<-as.data.frame(ranef2$species)
+speciestab2$Site<-"Alexandra Fiord"
+
+speciestabfruit<-rbind(speciestab, speciestab2)
+speciestabfruit$Species<-row.names(speciestabfruit)
+speciestabfruit<-relocate(speciestabfruit, c(Site, Species), .before = Estimate.doy_Intercept)
+speciestabfruit$model<-"Fruit number"
+
+speciestab<-rbind(speciestabflow, speciestabfruit)
+write.csv(speciestab, "MS_docs/TableS2.csv") 
+
+
+#year
+#flowering
+summary(flowmodq)
+ranef<-ranef(flowmodq)
+yeartab<-as.data.frame(ranef$year)
+yeartab$Site<-"Daring Lake"
+
+ranef2<-ranef(flowmodOTCq)
+yeartab2<-as.data.frame(ranef2$year)
+yeartab2$Site<-"Alexandra Fiord"
+
+yeartabflow<-rbind(yeartab, yeartab2)
+yeartabflow$year<-row.names(yeartabflow)
+yeartabflow<-relocate(yeartabflow, c(Site, year), .before = Estimate.doy_Intercept)
+yeartabflow$model<-"Flower number"
+
+#fruiting 
+ranef<-ranef(fruitmodq)
+yeartab<-as.data.frame(ranef$year)
+yeartab$Site<-"Daring Lake"
+
+ranef2<-ranef(fruitmodOTCq)
+yeartab2<-as.data.frame(ranef2$year)
+yeartab2$Site<-"Alexandra Fiord"
+
+yeartabfruit<-rbind(yeartab, yeartab2)
+yeartabfruit$year<-row.names(yeartabfruit)
+yeartabfruit<-relocate(yeartabfruit, c(Site, year), .before = Estimate.doy_Intercept)
+yeartabfruit$model<-"Fruit number"
+
+yeartab<-rbind(yeartabflow, yeartabfruit)
+
+write.csv(yeartab, "MS_docs/TableS3.csv")
+
+#look at the intercepts 
+ggplot(yeartab,
+       aes(x=as.factor(year), y=Estimate.doy_Intercept))+
+  geom_point( alpha=0.5)+ facet_wrap(~Site, scales = "free")+
+  geom_smooth(method='lm') +  theme_bw()
+
+
