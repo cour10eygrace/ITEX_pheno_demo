@@ -129,11 +129,12 @@ ggplot(semdat,
 summary(lm(Summer~as.numeric(year), semdat))
 #0.116*21= 2.4 C
 
-#Fig S2a 
-ggplot(semdat,
+#Fig S3a 
+ggplot(subset(semdat,species!="carex"), 
        aes(x=Summer, y=doy, fill=species))+
   geom_point(aes(colour=species), alpha=0.5)+
   geom_smooth(method="lm") + theme_bw()+
+  scale_fill_manual(values=specColor)+ scale_color_manual(values=specColor)+
   ylab("Flowering DOY")+ xlab("Growing Season temp (C)")
 
 cor.test(semdat$Summer,semdat$doy) #-0.4

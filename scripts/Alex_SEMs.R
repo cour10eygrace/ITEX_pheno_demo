@@ -65,7 +65,7 @@ bayestestR::ci(flowmodOTC, method="ETI", ci=c(0.85,0.9,0.95))
 fruitdat<-subset(flower_open, trait_simple2=="fruit_no")
 fruitdat<-mutate(fruitdat, value=if_else(species=="Dryas"&year==2003, NA_real_, value)) #only zeroes recorded for fruits this year- seems wrong 
 
-#visualize- Fig S3d
+#visualize- Fig S5b
 ggplot(subset(fruitdat, species!="Luzula"& species!="Oxyria"), 
        aes(x=doy, y=log(value+1), fill=otc_treatment))+
   geom_point(aes(colour=factor(otc_treatment)), alpha=0.5)+
@@ -113,7 +113,7 @@ bayestestR::ci(fruitmodOTCs, method="ETI", ci=c(0.85,0.9,0.95))
 #loo_compare(loo1, loo2)
 
 
-#plot phenology by treatment- Fig S2
+#plot phenology by treatment- Fig S3
 ggplot(flowdat, 
        aes(x=species, y=doy, fill=otc_treatment))+ 
   geom_boxplot()+ theme_bw()+ 

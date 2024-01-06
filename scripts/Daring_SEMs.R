@@ -168,7 +168,7 @@ FFfig<-ggplot(subset(fruit_test, !is.na(num_fruit)),
 #yes (to varying degrees across spp) but overall clear pattern
 
 
-#Supp fig 3
+#Supp fig 4
 ggplot(flowdat, aes(x=doy, y=log(value), fill=species))+
   geom_point(aes(colour=species), alpha=0.5)+
   #  geom_smooth(method = lm, formula = y ~ splines::bs(x, 3)) + #cubic spline
@@ -182,7 +182,7 @@ ggplot(fruitdat, aes(x=doy, y=log(value+1), fill=species))+
   geom_point(aes(colour=species), alpha=0.5)+
   #geom_smooth(method = lm, formula = y ~ splines::bs(x, 3)) + #cubic spline
   geom_smooth(method='lm') +
-  scale_fill_manual(values=specColor)+ scale_color_manual(values=specColor)+
+  scale_fill_manual(values=c("#74D944", "#CE50CA", "#5F7FC7"))+ scale_color_manual(values=c("#74D944", "#CE50CA", "#5F7FC7"))+
   #geom_smooth(method='gam', formula= y ~ s(x, bs = "cs", fx = TRUE, k = 2)) + 
   theme_bw()+  #facet_wrap(~trait2,scales = "free")+ 
   ylab("Num fruit (log)")+ xlab("DOY flower open")
