@@ -1,0 +1,26 @@
+Site,Model,Response,Parameter,Estimate,Est.Error,95 low,95 high,Bulk_ESS
+Daring Lake,Flower number,Flowering DOY,Intercept,0.065,0.399,-0.72,0.877,3060
+,,Flower number,Intercept,-0.143,0.267,-0.686,0.395,3705
+,,Flowering DOY,Temp,-0.413,0.064,-0.537,-0.286,2802
+,,Flower number,Temp,0.12,0.055,0.01,0.229,5551
+,,Flower number,DOY ,-0.264,0.054,-0.371,-0.157,11740
+,,Flower number,DOY2,0.063,0.02,0.025,0.102,17603
+Daring Lake,Fruit number,Flowering DOY,Intercept,-0.049,0.761,-1.716,1.505,4606
+,,Fruit number,Intercept,-0.31,0.778,-1.9,1.368,5090
+,,Flowering DOY,Temp,-0.748,0.183,-1.115,-0.381,2921
+,,Flowering DOY,Temp (prev),-0.083,0.182,-0.443,0.28,2703
+,,Fruit number,Temp (prev),0.069,0.057,-0.047,0.177,4647
+,,Fruit number,DOY,-0.134,0.054,-0.241,-0.032,6678
+,,Fruit number,DOY2,0.061,0.029,0.004,0.119,10525
+Alexandra Fiord,Flower number,Flowering DOY,Intercept,0.155,0.315,-0.478,0.777,2638
+,,Flower number,Intercept,0.873,0.179,0.517,1.226,3637
+,,Flowering DOY,OTC,-0.35,0.04,-0.43,-0.272,16466
+,,Flower number,OTC,-0.047,0.046,-0.136,0.041,15703
+,,Flower number,DOY,-0.146,0.035,-0.214,-0.078,10175
+,,Flower number,DOY2,-0.012,0.017,-0.046,0.022,11751
+Alexandra Fiord,Fruit number,Flowering DOY,Intercept,0.438,0.596,-0.808,1.589,2992
+,,Fruit number,Intercept,1.142,0.314,0.57,1.719,3147
+,,Flowering DOY,OTC,-0.424,0.039,-0.501,-0.346,19108
+,,Fruit number,OTC,-0.112,0.036,-0.182,-0.042,14940
+,,Fruit number,DOY,-0.201,0.026,-0.251,-0.15,12708
+,,Fruit number,DOY2,-0.02,0.012,-0.043,0.004,16283

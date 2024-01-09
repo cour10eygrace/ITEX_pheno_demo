@@ -1,0 +1,22 @@
+Model response,Climate predictors,AICc,Delta_AICc
+Flowering time (DOY),Temp + Snow free DOY,32435.63,0.00
+,Temp + Temp (prev) + Snow free DOY,32436.02,0.39
+,Temp,32436.05,0.42
+,Temp + Temp (prev),32436.54,0.91
+,Temp (prev) + Snow free DOY,32457.72,22.09
+,Temp (prev),32458.58,22.95
+,Snow free DOY,32460.42,24.79
+Flower number,Temp,4303.49,0.00
+,Temp + Temp (prev),4307.38,3.90
+,Temp (prev),4312.38,8.90
+,Temp + Snow free DOY,4313.01,9.52
+,Temp + Temp (prev) + Snow free DOY,4316.98,13.49
+,Snow free DOY,4318.84,15.36
+,Temp (prev) + Snow free DOY,4320.27,16.78
+Fruit number,Temp (prev),1018.97,0.00
+,Temp,1023.18,4.20
+,Temp (prev) + Snow free DOY,1023.79,4.81
+,Temp + Temp (prev) + Snow free DOY,1023.91,4.94
+,Temp + Temp (prev),1023.97,5.00
+,Temp + Snow free DOY,1025.13,6.16
+,Snow free DOY,1026.76,7.79

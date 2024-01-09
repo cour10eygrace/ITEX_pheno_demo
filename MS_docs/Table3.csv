@@ -1,0 +1,25 @@
+Site,Model,Response,Group,SD,Error
+Daring Lake,Flower number,Flowering DOY,Species,1.005,0.366
+,,Flowering DOY,Species:Plantid,0.022,0.015
+,,Flowering DOY,Year,0.278,0.05
+,,Flower number,Species,0.648,0.259
+,,Flower number,Species:Plantid,0.361,0.034
+,,Flower number,Year,0.206,0.044
+Daring Lake,Fruit number,Flowering DOY,Species,1.25,0.876
+,,Flowering DOY,Species:Plantid,0.062,0.031
+,,Flowering DOY,Year,0.733,0.14
+,,Fruit number,Species,1.331,0.89
+,,Fruit number,Species:Plantid,0.215,0.051
+,,Fruit number,Year,0.206,0.053
+Alexandra Fiord,Flower number,Flowering DOY,Species,0.43,0.265
+,,Flowering DOY,Site:Plot,0.443,0.064
+,,Flowering DOY,Year,0.646,0.186
+,,Flower number,Species,0.244,0.173
+,,Flower number,Site:Plot,0.177,0.041
+,,Flower number,Year,0.328,0.103
+Alexandra Fiord,Fruit number,Flowering DOY,Species,0.754,0.679
+,,Flowering DOY,Site:Plot,0.469,0.064
+,,Flowering DOY,Year,0.97,0.262
+,,Fruit number,Species,0.314,0.429
+,,Fruit number,Site:Plot,0.047,0.027
+,,Fruit number,Year,0.492,0.154

@@ -58,4 +58,4 @@ vignettes/*.pdf
 /scripts/OLD/ 
 
 #manuscript documents
-/MS_docs/
+#/MS_docs/
