@@ -44,7 +44,7 @@ vignettes/*.pdf
 #/data/
 
 #Rdata files 
-*.Rdata
+#*.Rdata
 
 #data not using 
 /data/Alex_raw_data/not_using/
@@ -53,6 +53,7 @@ vignettes/*.pdf
 
 #data files too big 
 /data/Alex_raw_data/compiled_hobo/
+/data/brms_SEM_output/
 
 #OLD scripts
 /scripts/OLD/ 
