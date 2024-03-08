@@ -1,7 +1,7 @@
 # Dependencies
 library(maps)
 library(raster)
-library(maptools)
+#library(maptools)
 library(dplyr)
 library(RColorBrewer)
 library(sf) # Simple feature geometries
@@ -14,15 +14,15 @@ library(ggrepel) # Avoid overlap when placing ggplot labels
 #find projections here 
 #https://git.earthdata.nasa.gov/projects/GIBSGEN/repos/gibsgen/browse/source/gdal_data/esri_extra.wkt?at=75b510afcc66a0b01d7c671d286edf799af3d911
 
-setwd("C:/Users/court/Google Drive/UBC Postdoc")
+#setwd("C:/Users/court/Google Drive/UBC Postdoc")
 
 # organize Site coordinates
-sites<-read.csv("ITEX_locations_ASissue.csv") 
+sites<-read.csv("G:/My Drive/UBC Postdoc/ITEX_locations_ASissue.csv") 
 sites<-tidyr::separate(sites, Site, c("Site", "state_province_country"), sep=',')
 
 #R can't figure out how to do g with dot...R just makes it a g
-sites$Site[sites$Site=="Utqia?vik"]="Utqiagvik"
-sites<-filter(sites, !is.na(Site))
+#sites$Site[sites$Site=="Utqia?vik"]="Utqiagvik"
+#sites<-filter(sites, !is.na(Site))
 
 sort(unique(sites$Site))
 
@@ -61,7 +61,7 @@ sites$Site<-as.factor(sites$Site)
 #remove Bogong and Changbai for separate plot
 #remove duplicates
 plot1_sites<-filter(sites, Lat>50&Long<0)%>%
-  select(Site, Lat, Long, treat)%>%
+  dplyr::select(Site, Lat, Long, treat)%>%
   group_by(Site, treat)%>%distinct(.)
 
 # Generate sf object for site point sources and transform
@@ -82,7 +82,7 @@ map_extent1 <- sites_sf %>% st_coordinates() %>%
 map_extent<-map_extent1
 
 
-sites_sf<-filter(sites_sf, Site=="Alexandra Fiord"|Site=="Daring Lake")%>%
+sites_sf<-filter(sites_sf, Site=="Alexandra Fiord*"|Site=="Daring Lake")%>%
   filter(.,treat=="OTC")
 
 # Plot data using ggplot
