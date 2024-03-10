@@ -16,30 +16,20 @@ make.pdf <- 'yes'
 ```
 
 
-### Introduction
-
-Remember that in biology, we are often interested in estimating and comparing means among different groups, such as experimental and control groups, or different species, ecosystems etc. Confidence intervals not only give us a range of confidence around the population estimates from our sample, but also allow us to accurately compare population estimates of different groups. This is a foundational approach in statistical inference. 
-
-### Case Study: Flowering times in a warming Arctic 
-
-The growing season for plants in Arctic tundra ecosystems is very short, often lasting only about 3 months (~June-August). Plants who thrive in these environments must quickly grow and flower after the winter snow melts, so they can complete their reproductive cycle before the cold temperatures return.
-With climate change, the Arctic is warming at an alarming rate, and in response, many plants are shifting their flowering times earlier to take advantage of the warmer spring temperatures. However, not all species are responding in the same way to warming, and species that are more flexible in their flowering times may have improved reproductive fitness as a result. 
-
-Using a long-term dataset from Collins et al. (2024) *Flowering time responses to warming drive reproductive fitness in a changing Arctic*, we will explore using confidence intervals to estimate the effects of warming on Arctic plant flowering times. The data in this study comes from two Arctic research sites in Canada: Daring Lake, Northwest Territories (64° 52' N, - 111° 35' W) and Alexandra Fiord, Nunavut (78° 49' N, - 75° 48' W).
 ```{r source map script, include=FALSE}
 source("C:/Users/court/Documents/Github_repos/ITEX_pheno_demo/scripts/map_fig.R")
 
 ```
 
-```{r plot map, include=TRUE, warning=FALSE, fig.width=4, fig.height=2, fig.align='center'}
+```{r plot map, include=FALSE, warning=FALSE, fig.width=4, fig.height=2, fig.align='center'}
 otc_site_map
 ```
 
 ### Dataset: Long-term plant phenology data from a passive warming experiment 
 
-Today we will be working with a subset of the data from Collins et al (2024) from Alexandra Fiord, which is in the high Arctic, on the coast of Johan Peninsula of east-central Ellesmere Island in Nunavut, Canada. At this site, researchers have installed passive open top plexiglass chambers (OTCs) across the tundra to experimentally warm tundra plants. These chambers work like mini greenhouses and trap incoming solar radiation to warm their interior by ~1-2 degrees Celsius.
+Today we will be working with a subset of the data from Collins et al (2024) from Alexandra Fiord, in Nunavut, Canada. At this site, researchers have installed passive open top plexiglass chambers (OTCs) across the tundra to experimentally warm tundra plants. These chambers work like mini greenhouses and trap incoming solar radiation to warm their interior by ~1-2 degrees Celsius.
 
-Repeat measurements were made annually for 12 years on tagged individual plants in 1 m × 1 m plots either outside (control) or inside of experimental warming open-top chambers (OTCs) for five common tundra species (*Cassiope tetragona, Oxyria dignya, Dryas integrifolia, Papaver radicatum and Luzula arctica*). Researchers monitored plants in all plots and recorded the day of year (DOY) when they first flowered. DOY is recorded in Julian days (i.e. 1-365) and the timing of flowering typically follows a normal distribution, with peak flowering occurring at the middle of the growing season, and tails on each side for individuals that flower earlier or later. Let's take a first look at our flowering data. 
+Individual plants were tagged 1 m × 1 m plots either outside (control) or inside of experimental warming open-top chambers (OTCs) for five common tundra species. For 12 years, researchers monitored these plants and recorded the day of year (DOY) when each plant first flowered. DOY is recorded in Julian days (i.e. 1-365) and the timing of flowering typically follows a normal distribution, with peak flowering occurring at the middle of the growing season, and tails on each side for individuals that flower earlier or later.  Let's take a first look at our flowering data. 
 
 ```{r load flowering data, include=FALSE}
 #load data
@@ -61,36 +51,39 @@ ggplot(flowdat, aes(x=doy)) +
   labs(x="Flowering DOY", y = "Count")+
   theme_classic()
 ```
+<br>
 
-Here we can see a histogram of all flowering data in our dataset and that it is relatively normally distributed. Let's define some of our sample statistics 
+Here we see a histogram of all flowering data in our dataset and that it is relatively normally distributed. Let's define our summary statistics: 
 ```{r calculate sampling stats , include=TRUE, echo=TRUE, out.width=50, out.height=50}
 mean(flowdat$doy)
 sd(flowdat$doy)
 nrow(flowdat)
 ```
-
-So we can see that we have a mean flowering day of 186.6, which we can round up to 187 or July 6th, with a standard deviation of 7.9 or ~8 days, and we have 1188 observations. So using the equation below, the 95% confidence interval for the mean flowering time of our population would be:
+<br>
+So there was a mean flowering day of **186.6**, which we can round up to 187 (i.e. July 6th), with a standard deviation of **7.9** or ~8 days, and we have **1188** observations. So using the equation below (with the z statistic as n>30), the 95% confidence interval for the mean flowering time of our population would be:
 
  $CI = \overline{x}\pm z * s/\sqrt{n}$ 
+ <br>
+
 ```{r confidence interval , include=TRUE, echo=TRUE,  size=3, out.width=50, out.height=50}
-187 + 1.96*(8/sqrt(1188))
-187 - 1.96*(8/sqrt(1188))
+186.6 + 1.96*(7.9/sqrt(1188))
+186.6 - 1.96*(7.9/sqrt(1188))
 ```
+<br>
 
-**95% CI = [186.55, 187.45].** Wow that is a pretty narrow confidence interval!  
-Why do you think our confidence interval is so narrow? What does this mean in terms of our sample? Discuss with your group!  
+#### QUESTION 1  
+When we bring these together, we see our **95% CI = [186.15, 187.05].** Wow, that is a pretty narrow confidence interval!  
 
+Why do you think our confidence interval is so narrow? What does this mean in terms of our sample? Discuss with your group and write your thoughts below!  
 
-
-
-
-
-
-
-
+<br>
+<br>
+<br>
+<br>
+<br>
 
 ### Comparing two means 
- Let's not forget about our warming experiment! As we learned above, many plants shift their flowering times earlier in response to warmer spring temperatures, which may provide them a reproductive advantage. Do we see evidence of this in our data? Let's plot this same histogram but by treatment group. 
+Let's not forget about our warming experiment --- As we learned above, many plants shift their flowering times earlier in response to warmer spring temperatures, which may provide them a reproductive advantage. Do we see evidence of this in our data? Let's plot this same histogram but by treatment group. 
 
 ```{r plot flowering by treat, fig.width=4, fig.height=2, fig.align='center', include=TRUE, echo=FALSE, warning=F}
 ggplot(flowdat, aes(x=doy, color=otc_treatment, fill=otc_treatment)) +
@@ -104,22 +97,13 @@ ggplot(flowdat, aes(x=doy, color=otc_treatment, fill=otc_treatment)) +
   labs(x="Flowering DOY", y = "Density", fill="Treatment")+ guides(color = "none")+ 
   theme_classic() 
 ```
- 
-Here we have a density graph overlaid on our histogram. A density graph shows the area or proportion of the total dataset captured in each bin rather than the counts. So we can see that the peak or average flowering time of plants in the warming plots is slightly earlier than those in control or ambient climate conditions. This matches our prediction! But how much confidence do we have in this effect? Do we know whether these groups are *actually* different?
- 
- 
- 
-#### Calculate a confidence interval for the difference between two groups
+ <br>
 
-Here our formula is very similar to one above, but we are calculating based on the *difference* of our sample means
+Here we have a density graph overlaid on our histogram. A density graph shows the area or proportion of the total dataset captured in each bin rather than the counts. 
 
- $CI = (\overline{x}_{1}-\overline{x}_{2})\pm z * \sqrt{s_1^2/n_1 + s_2^2/n_2 }$ 
- 
+So we can see that the peak or average flowering time of plants in the warming plots appears slightly earlier than those in control or ambient climate conditions. This matches our prediction! But how much confidence do we have in this effect? Do we know whether these groups are *actually* different? Let's look at our summary statistics again, this time by group:
 
-Based on the table below, calculate  the following: 1) 95% CI for average flowering time for the warming treatment, 2) 95% CI for average flowering time for the control, and 3) 95% CI for for the difference in average flowering time between warming and control. 
-
-
-```{r table, include=T,  echo=FALSE}
+```{r table, include=T,  echo=FALSE, warning=FALSE, message=FALSE}
 library(flextable)
 library(magrittr)
 table<-group_by(flowdat,otc_treatment)%>%summarize(MeanDOY=round(mean(doy), 2), Std.deviation=round(sd(doy), 2), N= n())%>%rename(Treatment=otc_treatment)%>%
@@ -129,7 +113,31 @@ table %>% regulartable() %>% autofit() %>%
 width(j=~Treatment,width=1) %>% width(j=~MeanDOY,width=1)%>%width(j=~Std.deviation,width=1)%>%width(j=~N,width=0.5)
 ```
 
-Based on these intervals, do you think we can conclude that plants flowered earlier under warmer temperatures in our population? Why or why not? Write your answers below! 
+#### Calculate a confidence interval for the difference between two groups
+Now we want to  calculate a confidence interval for  the *difference* of our sample means ($\overline{x}_{1}-\overline{x}_{2}$). To do this, we first need to calculate a pooled estimate of sample standard deviation ($S_p$). This assumes that the that the variances of our two populations are equal, which we can reasonably assume because our sample std. deviations are very similar (**7.84, 7.49**). This value of $S_p$ then gets plugged in to our new CI equation:
+
+ $S_p = \sqrt{(n_1-1)*s_1^2 + (n_2-1)*s_2^2/(n_1+n_2)-2}$
  
+ $CI = (\overline{x}_{1}-\overline{x}_{2})\pm z * S_p\sqrt{1/n_1 + 1/n_2 }$ 
+
+ <br>
+Other assumptions include that both samples are: 1) randomly drawn from their populations, and 2) have a normal distribution.  
+Using the equations and table above, **calculate** the 95% CI for for the difference in average flowering time between warming and control groups. For ease, let's round our standard deviations to 8 (warming) and 7.5 (control).  
+ <br>
+ <br>
+ <br>
+ <br>
+ <br>
+ <br>
+ <br>
+ <br>
  
+#### QUESTION 2
+Based on your interval, do you think we can conclude that plants flowered earlier under warmer temperatures in our population? Why or why not? What other information (if any) might be helpful? Discuss with your group, and write your thoughts below! 
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
 
