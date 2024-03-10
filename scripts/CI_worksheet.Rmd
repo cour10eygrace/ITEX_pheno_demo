@@ -29,7 +29,7 @@ otc_site_map
 
 Today we will be working with a subset of the data from Collins et al (2024) from Alexandra Fiord, in Nunavut, Canada. At this site, researchers have installed passive open top plexiglass chambers (OTCs) across the tundra to experimentally warm tundra plants. These chambers work like mini greenhouses and trap incoming solar radiation to warm their interior by ~1-2 degrees Celsius.
 
-Individual plants were tagged 1 m × 1 m plots either outside (control) or inside of experimental warming open-top chambers (OTCs) for five common tundra species. For 12 years, researchers monitored these plants and recorded the day of year (DOY) when each plant first flowered. DOY is recorded in Julian days (i.e. 1-365) and the timing of flowering typically follows a normal distribution, with peak flowering occurring at the middle of the growing season, and tails on each side for individuals that flower earlier or later.  Let's take a first look at our flowering data. 
+Individual plants were tagged in 1 m × 1 m plots either outside (control) or inside of experimental warming open-top chambers (OTCs) for five common tundra species. For 12 years, researchers monitored these plants and recorded the day of year (DOY) when each plant first flowered. DOY is recorded in Julian days (i.e. 1-365) and the timing of flowering typically follows a normal distribution, with peak flowering occurring at the middle of the growing season, and tails on each side for individuals that flower earlier or later.  Let's take a first look at our flowering data. 
 
 ```{r load flowering data, include=FALSE}
 #load data
@@ -112,7 +112,7 @@ table %>% regulartable() %>% autofit() %>%
 width(j=~Treatment,width=1) %>% width(j=~MeanDOY,width=1)%>%width(j=~Std.deviation,width=1)%>%width(j=~N,width=0.5)
 ```
 #### QUESTION 2
-Based on this table, calculate a 95% confidence interval for the average flowering time for the warming group and the control group. Write your answers below!
+a) Based on this table, calculate a 95% confidence interval for the average flowering time for the warming group and the control group. Describe these intervals in your own words. 
  <br>
  <br>
  <br>
@@ -120,23 +120,7 @@ Based on this table, calculate a 95% confidence interval for the average floweri
  <br>
 <br>
 <br>
-
-#### Calculate a confidence interval for the difference between two groups
-In order to state with confidence that our groups different, we need to  calculate a confidence interval for  the *difference* of our sample means ($\overline{x}_{1}-\overline{x}_{2}$). To do this, we first calculate a pooled estimate of sample standard deviation ($S_p$). This assumes that the that the variances of our two populations are equal, which we can reasonably assume because our sample std. deviations are very similar (**7.84, 7.49**). This value of $S_p$ then gets plugged in to our new CI equation:
-
- $S_p = \sqrt{(n_1-1)*s_1^2 + (n_2-1)*s_2^2/(n_1+n_2)-2}$
- 
- $CI = (\overline{x}_{1}-\overline{x}_{2})\pm z * S_p\sqrt{1/n_1 + 1/n_2 }$ 
-
- <br>
-Other assumptions include that both samples are: 1) randomly drawn from their populations, and 2) have a normal distribution. These both seem reasonable for our data.
-<br>
-<br>
-
-#### QUESTION 3
-Let's assume that you have worked out the math above, and you find that the confidence interval for the difference of our sample means with warming ($\overline{x}_{1}$) and control ($\overline{x}_{2}$) is **-3.7 $\pm$ 0.9** or **[-4.6, -2.8]**
-
-Describe this interval in your own words. Based on this interval, do you think we can conclude that plants flowered earlier under warmer temperatures in our population? Why or why not? What other information (if any) might be helpful? Discuss with your group, and write your thoughts below! 
+b) Based on these intervals, do you think we can conclude that plants flowered earlier under warmer temperatures in our population? Why or why not? What other information (if any) might be helpful? Discuss with your group, and write your thoughts below! 
 <br>
 <br>
 <br>
